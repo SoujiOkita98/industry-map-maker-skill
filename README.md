@@ -44,15 +44,19 @@ Read SKILL.md first. Then add 3 strongly relevant AI startups to this map with F
 ├── index.html                                 # Main interactive map (data + rendering + UI)
 ├── SKILL.md                                   # Canonical maintainer skill for AI agents
 ├── skills.md                                  # Backward-compat pointer to SKILL.md
-├── AGENT_PROMPT_TEMPLATES.md                  # Copy-paste prompts for common agent tasks
+├── docs/
+│   └── AGENT_PROMPT_TEMPLATES.md              # Copy-paste prompts for common agent tasks
 ├── scripts/
 │   ├── validate_map.sh                        # Syntax/integrity/sensitivity checks
 │   └── logo_probe.sh                          # Quick logo URL probe helper
-├── evidence_log_template.csv                  # Edge evidence tracking template
-├── market_landscape_vc_grade_2026-02-09.md   # Market sizing notes (USD-normalized)
-├── connection_validation_2026-02-09.csv       # Edge validation snapshot
-├── ai_startups_validation_2026-02-09.md       # AI startup validation notes
-├── ai_startups_round2_validation_2026-02-09.md
+├── templates/
+│   └── evidence_log_template.csv              # Edge evidence tracking template
+├── research/
+│   └── 2026-02-09/
+│       ├── market_landscape_vc_grade_2026-02-09.md
+│       ├── connection_validation_2026-02-09.csv
+│       ├── ai_startups_validation_2026-02-09.md
+│       └── ai_startups_round2_validation_2026-02-09.md
 └── .gitignore
 ```
 
@@ -153,7 +157,7 @@ Recommended evidence fields (when you extend the data model):
 - `confidence` (`high`, `med`, `low`)
 
 You can track these in:
-- `evidence_log_template.csv`
+- `templates/evidence_log_template.csv`
 
 Fast hygiene scan:
 

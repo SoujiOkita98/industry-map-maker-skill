@@ -137,7 +137,7 @@ When adding strict evidence tracking, attach per-edge metadata:
 - `evidence_type` (`official_filing`, `official_announcement`, `case_study`, `inference`)
 - `confidence` (`high`, `med`, `low`)
 
-Use `evidence_log_template.csv` as the default record format.
+Use `templates/evidence_log_template.csv` as the default record format.
 
 ## Public Release Hygiene
 

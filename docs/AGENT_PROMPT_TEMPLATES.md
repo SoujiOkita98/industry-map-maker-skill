@@ -22,7 +22,7 @@ Read SKILL.md first.
 Audit all ownership/investment/distribution edges in index.html.
 Prefer primary sources (IR, SEC, official announcements).
 Classify uncertain edges as POTENTIAL or HYP.
-Record results in evidence_log_template.csv format (create a new file with today’s date).
+Record results using templates/evidence_log_template.csv format (create a new file with today’s date).
 Run bash scripts/validate_map.sh.
 ```
 

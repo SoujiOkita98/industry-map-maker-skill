@@ -44,15 +44,19 @@ Read SKILL.md first. Then add 3 strongly relevant AI startups to this map with F
 ├── index.html                                 # 主地图（数据 + 渲染 + 交互）
 ├── SKILL.md                                   # 规范化维护指引（给 AI agent）
 ├── skills.md                                  # 兼容旧文件名，指向 SKILL.md
-├── AGENT_PROMPT_TEMPLATES.md                  # 常见任务提示词模板
+├── docs/
+│   └── AGENT_PROMPT_TEMPLATES.md              # 常见任务提示词模板
 ├── scripts/
 │   ├── validate_map.sh                        # 一键校验（语法/完整性/敏感扫描）
 │   └── logo_probe.sh                          # logo 链接快速探测
-├── evidence_log_template.csv                  # 边证据记录模板
-├── market_landscape_vc_grade_2026-02-09.md   # 市场规模研究（USD）
-├── connection_validation_2026-02-09.csv       # 关系核验快照
-├── ai_startups_validation_2026-02-09.md
-├── ai_startups_round2_validation_2026-02-09.md
+├── templates/
+│   └── evidence_log_template.csv              # 边证据记录模板
+├── research/
+│   └── 2026-02-09/
+│       ├── market_landscape_vc_grade_2026-02-09.md
+│       ├── connection_validation_2026-02-09.csv
+│       ├── ai_startups_validation_2026-02-09.md
+│       └── ai_startups_round2_validation_2026-02-09.md
 └── .gitignore
 ```
 
@@ -139,7 +143,7 @@ bash scripts/logo_probe.sh \
 
 可使用模板：
 
-- `evidence_log_template.csv`
+- `templates/evidence_log_template.csv`
 
 ## 公开发布说明
 
