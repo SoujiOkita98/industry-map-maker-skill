@@ -1,19 +1,19 @@
-# Anime Industry Map (AI + Value Chain)
+# Industry Map Maker Skill (with Anime Showcase)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-An interactive, single-file industry map that visualizes:
+An interactive, single-file map framework that demonstrates:
 
-- the anime/ACG value chain
+- a full industry value chain
 - key companies and startups
 - relationship types (ownership, licensing, distribution, tech, hypotheses)
 - AI opportunity overlays by layer
 
-This repository is intentionally structured as a **replicable example** for building visual relationship maps with coding agents.
+The current concrete example is anime/ACG, but the core deliverable is the reusable skill + workflow for building visual relationship maps in any domain.
 
 ## Why This Repo Exists
 
-This project demonstrates an output pattern you can reuse for other industries:
+This project provides a reusable pattern for any industry map:
 
 - one HTML artifact (`index.html`) for easy sharing/deployment
 - a maintainer skill (`SKILL.md`) to guide future AI agents

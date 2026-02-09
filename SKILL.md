@@ -1,11 +1,11 @@
 ---
-name: anime-industry-map-maintainer
-description: Maintain and improve a single-file Anime Industry Map (index.html): research-backed node/edge updates, evidence-tiered relationship modeling, USD-only market annotations, logo quality fixes, readability/layout tuning, and release-safe cleanup for public GitHub sharing.
+name: industry-map-maker-skill
+description: Build and maintain single-file interactive industry maps (index.html) with evidence-tiered relationships, logo and layout quality controls, USD-normalized market annotations, and public-release-safe collaboration workflows. Anime/ACG in this repo is the showcase example.
 ---
 
-# Anime Industry Map Maintainer
+# Industry Map Maker Skill
 
-Use this skill when updating `index.html` in this repo (graph data + rendering + UX) and when preparing the project for public release.
+Use this skill when updating `index.html` in this repo (graph data + rendering + UX) and when preparing the project for public release. Treat the anime map as an example implementation of a general approach.
 
 ## Scope
 

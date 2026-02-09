@@ -1,19 +1,19 @@
-# Anime Industry Map（AI + 产业价值链）
+# Industry Map Maker Skill（含 Anime 示例）
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-这是一个可交互的单文件产业地图，用于可视化：
+这是一个可交互的单文件产业地图框架，用于演示：
 
-- Anime/ACG 价值链
+- 某个行业的完整价值链
 - 关键公司与 AI 创业公司
 - 关系类型（股权、授权、分发、技术、假设）
 - 分层 AI 机会覆盖
 
-本仓库也被设计成一个可复用示例：你可以用它快速搭建其他行业的关系地图，并配合 Codex/Claude Code 持续迭代。
+当前示例内容是 Anime/ACG，但核心是可复用的技能与流程：你可以用它快速搭建其他行业关系图，并配合 Codex/Claude Code 持续迭代。
 
 ## 为什么做这个仓库
 
-这个项目展示了一套可复制的输出模式：
+这个项目提供了一套可复制的行业地图方法：
 
 - 单一 HTML 成品（`index.html`）便于分享和部署
 - 维护技能文档（`SKILL.md`）便于后续 AI 接手
