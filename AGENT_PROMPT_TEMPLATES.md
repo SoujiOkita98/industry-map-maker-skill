@@ -2,11 +2,11 @@
 
 Use these prompts with Codex or Claude Code while the working directory is this repo.
 
-## 1) Add startups (research-backed)
+## 1) Add startups (research-backed, any industry)
 
 ```text
 Read SKILL.md first.
-Add 3 AI startups strongly relevant to anime/ACG.
+Add 3 AI startups strongly relevant to this map's target industry.
 For each startup:
 - add node with high-quality logo strategy
 - add connections with correct FACT/POTENTIAL/HYP behavior
@@ -15,7 +15,7 @@ Run bash scripts/validate_map.sh before finishing.
 Summarize sources and confidence for each new edge.
 ```
 
-## 2) Cross-validate high-risk edges
+## 2) Cross-validate high-risk edges (primary-source first)
 
 ```text
 Read SKILL.md first.
@@ -26,7 +26,7 @@ Record results in evidence_log_template.csv format (create a new file with today
 Run bash scripts/validate_map.sh.
 ```
 
-## 3) Logo quality pass
+## 3) Logo quality pass (official assets first)
 
 ```text
 Read SKILL.md first.
