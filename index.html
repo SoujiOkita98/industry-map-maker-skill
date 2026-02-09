@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anime Industry Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f8fb;
+  --text:#1a1a2e;
+  --text2:#3f3f5a;
+  --muted:#6c6c86;
+  --border:rgba(0,0,0,0.08);
+  --card:#ffffff;
+  --ai:#0891b2;
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter','Noto Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+
+/* Canvas */
+#mapCanvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:grab}
+#mapCanvas.grabbing{cursor:grabbing}
+
+/* HUD */
+.hud{position:fixed;z-index:100;pointer-events:none}
+.hud>*{pointer-events:auto}
+
+.hud-top{top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(180deg,rgba(248,248,251,0.95) 60%,transparent)}
+.hud-title{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#1a1a2e}
+.hud-subtitle{font-size:12px;color:var(--muted)}
+.hud-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+.search-box{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;width:220px;outline:none;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.search-box:focus{border-color:var(--ai);box-shadow:0 0 0 3px rgba(8,145,178,0.1)}
+.search-box::placeholder{color:var(--muted)}
+
+.btn{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.06);user-select:none}
+.btn:hover{border-color:rgba(0,0,0,0.15);color:var(--text)}
+.btn.active{background:rgba(8,145,178,0.08);border-color:var(--ai);color:var(--ai)}
+.btn-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:all 0.2s}
+.btn.active .btn-dot{background:var(--ai);box-shadow:0 0 6px var(--ai)}
+
+/* Legend */
+.hud-legend{bottom:16px;left:16px;display:flex;flex-direction:column;gap:5px;background:rgba(255,255,255,0.92);padding:12px 16px;border-radius:10px;border:1px solid var(--border);backdrop-filter:blur(10px);box-shadow:0 2px 10px rgba(0,0,0,0.06)}
+.legend-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px}
+.legend-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.legend-toggle{border:1px solid var(--border);background:#fff;color:var(--text2);font-size:11px;padding:3px 8px;border-radius:12px;cursor:pointer}
+.legend-toggle:hover{color:var(--text);border-color:rgba(0,0,0,0.15)}
+.legend-body{display:flex;flex-direction:column;gap:5px}
+.hud-legend.collapsed .legend-body{display:none}
+
+/* Zoom controls */
+.hud-zoom{bottom:16px;right:16px;display:flex;flex-direction:column;gap:4px}
+.zoom-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.06);transition:all 0.2s}
+.zoom-btn:hover{background:#f0f0f5;border-color:rgba(0,0,0,0.12)}
+
+/* Detail Panel */
+.detail-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.2);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.detail-overlay.open{opacity:1;pointer-events:all}
+.detail-panel{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:90vw;background:#fff;border-left:1px solid var(--border);z-index:201;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.16,1,0.3,1);overflow-y:auto;padding:24px;box-shadow:-4px 0 20px rgba(0,0,0,0.08)}
+.detail-panel.open{transform:translateX(0)}
+.detail-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:#f5f5f8;color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.detail-close:hover{color:var(--text);background:#eee}
+.detail-logo{width:56px;height:56px;border-radius:12px;object-fit:contain;background:#f5f5f8;margin-bottom:14px}
+.detail-name{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:2px}
+.detail-layer{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.detail-section{margin-bottom:18px}
+.detail-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;font-weight:700}
+.detail-desc{font-size:13px;line-height:1.7;color:var(--text2)}
+.detail-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.detail-meta-item{background:#f5f5f8;border-radius:8px;padding:10px}
+.detail-meta-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.detail-meta-value{font-size:15px;font-weight:700}
+.detail-tags{display:flex;flex-wrap:wrap;gap:5px}
+.detail-tag{font-size:11px;padding:3px 9px;border-radius:5px;background:#f0f0f5;color:var(--text2)}
+.detail-connections{display:flex;flex-direction:column;gap:5px}
+.detail-conn{display:flex;align-items:center;gap:7px;padding:8px 10px;background:#f5f5f8;border-radius:6px;cursor:pointer;transition:background 0.2s;font-size:12px}
+.detail-conn:hover{background:#eeeef2}
+
+/* Minimap */
+.minimap{position:fixed;bottom:16px;right:60px;width:160px;height:100px;background:rgba(6,6,13,0.85);border:1px solid var(--border);border-radius:8px;overflow:hidden;z-index:100;backdrop-filter:blur(10px)}
+.minimap canvas{width:100%;height:100%}
+
+/* Tooltip */
+.tooltip{position:fixed;z-index:150;background:rgba(255,255,255,0.97);border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 14px;pointer-events:none;opacity:0;transition:opacity 0.15s;backdrop-filter:blur(10px);max-width:260px;box-shadow:0 4px 16px rgba(0,0,0,0.1)}
+.tooltip.visible{opacity:1}
+.tooltip-name{font-size:14px;font-weight:700;margin-bottom:2px;color:#1a1a2e}
+.tooltip-type{font-size:11px;color:var(--muted);margin-bottom:6px}
+.tooltip-meta{display:flex;gap:8px;flex-wrap:wrap}
+.tooltip-tag{font-size:10px;padding:2px 6px;border-radius:3px;background:#f0f0f5;color:var(--text2)}
+.tooltip-tag.pub{color:#059669;background:rgba(5,150,105,0.1)}
+.tooltip-tag.priv{color:#d97706;background:rgba(217,119,6,0.1)}
+
+/* AI overlay labels */
+.ai-label{position:fixed;z-index:90;pointer-events:none;opacity:0;transition:opacity 0.3s}
+.ai-label.visible{opacity:1;pointer-events:auto}
+
+/* Intro overlay */
+.intro-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:300;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity 0.4s;backdrop-filter:blur(4px)}
+.intro-overlay.hidden{opacity:0;pointer-events:none}
+.intro-card{background:#fff;border-radius:16px;padding:32px 36px;max-width:520px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.intro-card h2{font-family:'Space Grotesk',sans-serif;font-size:22px;margin-bottom:4px;color:#1a1a2e}
+.intro-card .intro-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+.intro-card .intro-total{font-size:14px;color:var(--text2);margin-bottom:16px;padding:10px 14px;background:#f5f5f8;border-radius:8px;line-height:1.6}
+.intro-card .intro-total b{color:#1a1a2e}
+.intro-card .intro-keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px;color:var(--text2);margin-bottom:18px}
+.intro-card .intro-key{font-weight:600;color:var(--text)}
+.intro-card .intro-go{display:block;width:100%;padding:12px;border:none;border-radius:10px;background:#1a1a2e;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;font-family:'Space Grotesk',sans-serif}
+.intro-card .intro-go:hover{background:#333355}
+</style>
+</head>
+<body>
+<canvas id="mapCanvas"></canvas>
+
+<!-- Intro Overlay -->
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-card">
+    <h2>Anime Industry Map</h2>
+    <div class="intro-sub">An opinionated map of the anime value chain & AI opportunities</div>
+    <div class="intro-total">
+      The global anime/ACG industry hit <b>$25B+ in 2024</b> (+15% YoY).<br>
+      Add <b>ACG gaming</b> (Genshin alone: $7B+ lifetime) and the total ACG ecosystem exceeds <b>$100B</b>.<br>
+      This map traces <b>70+ companies</b> across 10 layers — from IP creation to gaming, streaming, merch, and fan economy — and shows where <b>AI startups</b> are disrupting each layer.
+    </div>
+    <div class="intro-keys">
+      <span class="intro-key">Drag</span><span>Pan the map</span>
+      <span class="intro-key">Scroll</span><span>Zoom in/out</span>
+      <span class="intro-key">Hover</span><span>See connections & tooltip</span>
+      <span class="intro-key">Click</span><span>Open company detail panel</span>
+      <span class="intro-key">Circle size</span><span>= Relative importance in ecosystem</span>
+      <span class="intro-key">Dashed borders</span><span>= Value chain layers (left→right = upstream→downstream)</span>
+      <span class="intro-key">$ annotations</span><span>= Market size of each layer</span>
+      <span class="intro-key">AI Opportunities</span><span>= Toggle to see AI disruption per layer</span>
+    </div>
+    <button class="intro-go" onclick="document.getElementById('introOverlay').classList.add('hidden')">Explore the Map</button>
+  </div>
+</div>
+
+<!-- HUD Top -->
+<div class="hud hud-top">
+  <div>
+    <div class="hud-title">Anime Industry Map</div>
+    <div class="hud-subtitle">Value Chain & AI Opportunity Analysis</div>
+  </div>
+  <div class="hud-controls">
+    <input type="text" class="search-box" id="searchBox" placeholder="Search companies, IPs...">
+    <div class="btn" id="aiToggle" onclick="toggleAI()">
+      <span class="btn-dot"></span>AI Opportunities
+    </div>
+    <div class="btn" id="acgToggle" onclick="toggleACGFocus()">
+      <span class="btn-dot"></span>ACG-Strong AI
+    </div>
+    <div class="btn active" id="allLinesToggle" onclick="toggleAllLines()">
+      <span class="btn-dot"></span>All Lines
+    </div>
+    <div class="btn" id="confidenceToggle" onclick="toggleHighConfidence()">
+      <span class="btn-dot"></span>High-Confidence Only
+    </div>
+    <div class="btn active" id="hypothesisToggle" onclick="toggleHypotheses()">
+      <span class="btn-dot"></span>Show Hypotheses
+    </div>
+    <div class="btn" id="investableToggle" onclick="toggleInvestableView()">
+      <span class="btn-dot"></span>Investable View
+    </div>
+    <div class="btn" onclick="resetView()">Reset View</div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="hud hud-legend" id="legend"></div>
+
+<!-- Zoom -->
+<div class="hud hud-zoom">
+  <button class="zoom-btn" onclick="zoomIn()">+</button>
+  <button class="zoom-btn" onclick="zoomOut()">−</button>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-name" id="ttName"></div>
+  <div class="tooltip-type" id="ttType"></div>
+  <div class="tooltip-meta" id="ttMeta"></div>
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detailPanel">
+  <button class="detail-close" onclick="closeDetail()">×</button>
+  <div id="detailContent"></div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const LAYERS = [
+  { id:"ip",    name:"IP Creation",       color:"#FF6B9D", desc:"Where stories are born: manga, light novels, games",
+    market:"Japan manga market ~$4.7B (2024, proxy for IP origin)",
+    examples:"e.g. One mangaka can create a $10B+ franchise (Eiichiro Oda → One Piece)",
+    ai:[{t:"AI-Assisted Manga Drawing",d:"Background gen, inking, panels",i:"high",w:"now"},{t:"AI Story Generation",d:"Plot, dialogue, world-building",i:"med",w:"near"},{t:"AI Character Design",d:"Character concepts & expression sheets",i:"med",w:"now"}]},
+  { id:"pub",   name:"Publishing",         color:"#4ECDC4", desc:"Serialize & distribute manga/LN/webtoon globally",
+    market:"WEBTOON revenue ~$1.35B (2024) + major JP manga publishers (USD-normalized)",
+    examples:"Shonen Jump app: 23M+ MAU. Solo Leveling: webtoon→anime breakout hit",
+    ai:[{t:"AI Translation (Simulpub)",d:"Neural MT for simultaneous global releases",i:"high",w:"now"},{t:"AI Lettering",d:"Auto text placement in translated panels",i:"med",w:"now"},{t:"AI Anti-Piracy",d:"Automated scanning & DMCA takedowns",i:"med",w:"near"}]},
+  { id:"studio",name:"Animation Studios",  color:"#FF8C42", desc:"Produce the anime — thin margins, work-for-hire",
+    market:"AJA narrow industry market ~$3.1B (2024)",
+    examples:"Most studios earn <5% margin. Animators avg salary ~$25K/yr",
+    ai:[{t:"AI In-Betweening",d:"Automate tween frames — huge labor savings",i:"high",w:"now"},{t:"AI Background Art",d:"Generate backgrounds from rough sketches",i:"high",w:"now"},{t:"AI Compositing",d:"Color grading, lighting, compositing",i:"med",w:"near"},{t:"AI Voice Synthesis",d:"Voice cloning for dubbing",i:"med",w:"near"}]},
+  { id:"comm",  name:"Production Committees", color:"#A78BFA", desc:"Fund & control anime — risk-sharing model",
+    market:"No clean public TAM; economics embedded across rights and recoup waterfalls",
+    examples:"Demon Slayer film: $500M+ box office. Committee members split profits",
+    ai:[{t:"AI Market Analysis",d:"Predict IP success, audience sizing",i:"med",w:"near"},{t:"AI Budget Optimization",d:"Production cost estimation & allocation",i:"low",w:"future"}]},
+  { id:"dist",  name:"Distribution & Streaming", color:"#60A5FA", desc:"Deliver anime to global audiences",
+    market:"AJA distribution category ~$1.67B (2023 snapshot, USD-converted)",
+    examples:"Crunchyroll: 17M subs. Overseas revenue now 56% of anime industry",
+    ai:[{t:"AI Recommendations",d:"Personalized anime recs driving engagement",i:"high",w:"now"},{t:"AI Dubbing",d:"Real-time voice dubbing & subtitles",i:"high",w:"now"},{t:"AI Moderation",d:"Content classification & age-rating",i:"med",w:"now"}]},
+  { id:"merch", name:"Merchandising",      color:"#FBBF24", desc:"Figures, models, apparel — often the biggest money maker",
+    market:"AJA productization category ~$4.67B (2023 snapshot, USD-converted)",
+    examples:"A single Demon Slayer figure sells 100K+ units. Gunpla has 50yr legacy",
+    ai:[{t:"AI Merch Design",d:"Rapid merchandise design generation",i:"med",w:"near"},{t:"AI Demand Forecast",d:"Predict sales, optimize inventory",i:"med",w:"now"},{t:"AI 3D Modeling",d:"Generate figure sculpts from 2D art",i:"high",w:"near"}]},
+  { id:"event", name:"Events & Conventions",color:"#34D399", desc:"Where fans & industry meet",
+    market:"AJA live entertainment category ~$0.72B (2023 snapshot, USD-converted)",
+    examples:"Comiket circle revenue est. $100M+ per event",
+    ai:[{t:"AI Virtual Events",d:"AI-powered virtual con experiences",i:"med",w:"near"},{t:"AI Live Translation",d:"Real-time panel translation",i:"high",w:"now"}]},
+  { id:"fan",   name:"Fan Economy & UGC",  color:"#F472B6", desc:"Fan art, doujinshi, cosplay, VTubers — the cultural engine",
+    market:"No single audited TAM; triangulate via platform scale + creator monetization",
+    examples:"Neuro-sama: AI VTuber, #1 most-subscribed on Twitch (160K+ subs, ~1M followers)",
+    ai:[{t:"AI Art Tools",d:"Style transfer, AI-assisted illustration",i:"high",w:"now"},{t:"AI VTuber Tech",d:"Face tracking, voice mod, avatar gen",i:"high",w:"now"},{t:"AI Doujin Translation",d:"Fan-powered machine translation",i:"med",w:"now"}]},
+  { id:"aitech",name:"AI & Technology",    color:"#06b6d4", desc:"AI tools & platforms disrupting anime creation & consumption",
+    market:"No audited anime-only TAM; measured via startup ARR + studio software spend",
+    examples:"Midjourney: $500M rev, 0 VC. Anime is #1 category on CivitAI",
+    ai:[{t:"Foundation Models",d:"Image/video gen models powering anime AI",i:"high",w:"now"},{t:"AI Companionship",d:"Anime character chatbots & virtual companions",i:"high",w:"now"},{t:"AI Production Pipeline",d:"End-to-end AI anime production tools",i:"high",w:"near"}]},
+  { id:"game", name:"Gaming (ACG)",       color:"#e879f9", desc:"Anime-style games — gacha, RPG, action. Massive revenue engine for the ACG ecosystem",
+    market:"Global games market ~$188.8B (2025 top-down); anime-specific share varies",
+    examples:"Genshin Impact: $7B+ lifetime. FGO: $7B+ lifetime. NIKKE: $1B+ in 2yrs",
+    ai:[{t:"AI NPC & Dialogue",d:"Dynamic character interaction in games",i:"high",w:"now"},{t:"AI Asset Generation",d:"Auto-generate game art, textures, environments",i:"high",w:"now"},{t:"AI Game Testing",d:"Automated QA and balance testing",i:"med",w:"near"}]}
+];
+
+// Connections between companies (id -> id)
+const CONNECTIONS = [
+  // === SONY GROUP STRUCTURE ===
+  {from:"sony-group",to:"aniplex",type:"subsidiary",label:"Subsidiary (via Sony Music)"},
+  {from:"sony-group",to:"crunchyroll",type:"subsidiary",label:"Subsidiary (via Sony Pictures)"},
+  {from:"sony-group",to:"sony-music",type:"subsidiary",label:"Subsidiary"},
+  {from:"aniplex",to:"a1",type:"subsidiary",label:"Subsidiary"},
+  {from:"aniplex",to:"cloverworks",type:"subsidiary",label:"Subsidiary"},
+  {from:"sony-music",to:"aniplex",type:"parent",label:"Parent"},
+
+  // === PUBLISHING → STUDIOS (IP licensing) ===
+  {from:"shueisha",to:"toei",type:"license",label:"One Piece, Dragon Ball"},
+  {from:"shueisha",to:"mappa",type:"license",label:"Jujutsu Kaisen"},
+  {from:"shueisha",to:"ufotable",type:"license",label:"Demon Slayer"},
+  {from:"shueisha",to:"bones",type:"license",label:"My Hero Academia"},
+  {from:"shueisha",to:"madhouse",type:"license",label:"Hunter x Hunter"},
+  {from:"kodansha",to:"mappa",type:"license",label:"Attack on Titan Final"},
+  {from:"kodansha",to:"wit",type:"license",label:"AoT S1-3, Vinland Saga"},
+  {from:"kodansha",to:"kyoani",type:"license",label:"A Silent Voice"},
+  {from:"kodansha",to:"bones",type:"license",label:"Noragami"},
+  {from:"kadokawa",to:"a1",type:"license",label:"SAO"},
+  {from:"kadokawa",to:"kyoani",type:"license",label:"Various LN"},
+  {from:"kadokawa",to:"madhouse",type:"license",label:"Overlord, No Game No Life"},
+  {from:"kadokawa",to:"trigger",type:"invest",label:"Kadokawa invested in Trigger parent"},
+  // Doraemon is Shin-Ei Animation, not Toei. Shogakukan-Toei direct IP license unclear.
+  {from:"shogakukan",to:"madhouse",type:"license",label:"Frieren"},
+  {from:"square-enix",to:"bones",type:"license",label:"Fullmetal Alchemist"},
+
+  // === PRODUCTION COMMITTEES / PRODUCERS → STUDIOS ===
+  {from:"aniplex",to:"ufotable",type:"produce",label:"Demon Slayer production"},
+  {from:"aniplex",to:"a1",type:"produce",label:"SAO, Kaguya-sama"},
+  {from:"aniplex",to:"cloverworks",type:"produce",label:"Bocchi, Spy×Family"},
+  {from:"aniplex",to:"wit",type:"produce",label:"Spy × Family"},
+  {from:"bandai-namco",to:"toei",type:"committee",label:"Dragon Ball (toys/games)"},
+  {from:"toho",to:"toei",type:"committee",label:"Film distribution"},
+  {from:"toho",to:"mappa",type:"committee",label:"JJK0 film"},
+  {from:"toho",to:"ghibli",type:"committee",label:"Ghibli film distribution"},
+
+  // === STUDIOS → DISTRIBUTION ===
+  {from:"toei",to:"crunchyroll",type:"distribute",label:"Streaming rights"},
+  {from:"mappa",to:"crunchyroll",type:"distribute",label:"Streaming"},
+  {from:"mappa",to:"netflix",type:"distribute",label:"Exclusive deals"},
+  {from:"ufotable",to:"crunchyroll",type:"distribute",label:"Demon Slayer streaming"},
+  {from:"bones",to:"crunchyroll",type:"distribute",label:"MHA streaming"},
+  {from:"ghibli",to:"netflix",type:"distribute",label:"Ghibli catalog (global)"},
+  {from:"production-ig",to:"netflix",type:"distribute",label:"Ghost in the Shell SAC"},
+  {from:"trigger",to:"crunchyroll",type:"distribute",label:"Streaming rights"},
+  {from:"kyoani",to:"crunchyroll",type:"distribute",label:"Streaming rights"},
+  {from:"madhouse",to:"crunchyroll",type:"distribute",label:"Frieren streaming"},
+  {from:"wit",to:"crunchyroll",type:"distribute",label:"Spy×Family streaming"},
+  {from:"toei",to:"bilibili",type:"distribute",label:"China streaming"},
+
+  // === TENCENT INVESTMENTS ===
+  {from:"tencent",to:"kadokawa",type:"invest",label:"Historically 6.86% (2021 disclosed)"},
+  {from:"tencent",to:"bilibili",type:"invest",label:"Major investor"},
+
+  // === BANDAI NAMCO GROUP ===
+  {from:"bandai-namco",to:"bandai-spirits",type:"subsidiary",label:"Subsidiary"},
+  {from:"bandai-namco",to:"good-smile",type:"committee",label:"Figure licensing"},
+
+  // === MERCH CONNECTIONS ===
+  {from:"good-smile",to:"animate",type:"distribute",label:"Retail distribution"},
+  {from:"bandai-spirits",to:"animate",type:"distribute",label:"Retail distribution"},
+  {from:"kotobukiya",to:"animate",type:"distribute",label:"Retail distribution"},
+  {from:"bushiroad",to:"animate",type:"distribute",label:"TCG retail"},
+
+  // === FAN ECONOMY ===
+  {from:"pixiv",to:"booth",type:"platform",label:"E-commerce arm"},
+  {from:"pixiv",to:"dlsite",type:"influence",label:"Creator overlap"},
+  {from:"hololive",to:"bilibili",type:"influence",label:"Historical partnership (2019)"},
+  {from:"nijisanji",to:"bilibili",type:"distribute",label:"China streaming"},
+  {from:"hololive",to:"good-smile",type:"license",label:"Hololive figures"},
+  {from:"nijisanji",to:"good-smile",type:"license",label:"Nijisanji figures"},
+  {from:"hololive",to:"bushiroad",type:"license",label:"Weiss Schwarz collab"},
+  {from:"comiket",to:"pixiv",type:"influence",label:"Doujinshi ↔ digital"},
+  {from:"comiket",to:"booth",type:"influence",label:"Circle sales"},
+  {from:"comiket",to:"dlsite",type:"influence",label:"Digital doujin sales"},
+  {from:"anime-expo",to:"aniplex",type:"committee",label:"Industry panels"},
+  {from:"anime-japan",to:"bandai-namco",type:"committee",label:"Exhibition"},
+
+  // === CYBERAGENT → CYGAMES ===
+  {from:"cyberagent",to:"cygames",type:"subsidiary",label:"Parent company"},
+  // Cygames anime is produced by P.A. Works (S1-2) and CygamesPictures (OVA), not MAPPA
+
+  // === TYPE-MOON / FATE ===
+  {from:"type-moon",to:"aniplex",type:"license",label:"Fate license"},
+  {from:"type-moon",to:"ufotable",type:"license",label:"Fate anime"},
+
+  // === LIVE2D → VTUBERS ===
+  {from:"live2d",to:"hololive",type:"tech",label:"VTuber tech"},
+  {from:"live2d",to:"nijisanji",type:"tech",label:"VTuber tech"},
+
+  // === AI → ANIME INDUSTRY ===
+  // Removed: stability-ai→novelai (NovelAI trained their own model, not based on SD)
+  {from:"stability-ai",to:"civitai",type:"tech",label:"SD model ecosystem"},
+  {from:"stability-ai",to:"comfyui",type:"tech",label:"Stable Diffusion backend"},
+  {from:"midjourney",to:"pixiv",type:"influence",label:"AI fan art creation"},
+  {from:"civitai",to:"pixiv",type:"influence",label:"Anime model community"},
+  {from:"civitai",to:"comfyui",type:"tech",label:"Model distribution"},
+  {from:"novelai",to:"pixiv",type:"influence",label:"AI anime art"},
+  // Removed: character-ai↔hololive/nijisanji (no real partnership, just fan-made bots)
+  // Removed: elevenlabs↔crunchyroll/aniplex (speculative "potential", no confirmed deals)
+  // Removed: runway↔mappa/toei, pika↔trigger, luma-ai↔good-smile (all speculative)
+
+  // === DISTRIBUTION CROSS-LINKS ===
+  {from:"tv-tokyo",to:"crunchyroll",type:"distribute",label:"Broadcast → streaming"},
+  {from:"tv-tokyo",to:"toei",type:"distribute",label:"Primary broadcaster"},
+  {from:"shueisha",to:"shogakukan",type:"group",label:"Hitotsubashi Group"},
+  {from:"kodansha",to:"shueisha",type:"influence",label:"Industry rivals"},
+
+  // === WEBTOON / DIGITAL PLATFORM CONNECTIONS ===
+  {from:"webtoon-ent",to:"crunchyroll",type:"license",label:"Solo Leveling, Tower of God anime"},
+  {from:"webtoon-ent",to:"a1",type:"license",label:"Solo Leveling adaptation"},
+  {from:"webtoon-ent",to:"netflix",type:"license",label:"Webtoon adaptations"},
+  {from:"piccoma",to:"shueisha",type:"distribute",label:"Digital manga distribution"},
+  {from:"piccoma",to:"kodansha",type:"distribute",label:"Digital manga distribution"},
+  {from:"piccoma",to:"kadokawa",type:"distribute",label:"Digital manga/LN distribution"},
+
+  // === GAMING CONNECTIONS ===
+  // miHoYo
+  {from:"mihoyo",to:"bilibili",type:"influence",label:"Content platform; Bilibili early investor in miHoYo"},
+  {from:"mihoyo",to:"pixiv",type:"influence",label:"Massive fan art community"},
+  {from:"mihoyo",to:"good-smile",type:"license",label:"Genshin figures"},
+  // Removed: mihoyo↔hololive (no formal partnership, just VTubers playing popular games)
+
+  // Hypergryph / Yostar
+  {from:"hypergryph",to:"yostar",type:"distribute",label:"Arknights global publishing"},
+  {from:"yostar",to:"nexon",type:"influence",label:"Blue Archive region split (JP/CN vs Global)"},
+  {from:"yostar",to:"bilibili",type:"distribute",label:"Game streaming"},
+
+  // Papergames
+  {from:"papergames",to:"pixiv",type:"influence",label:"Love and Deepspace fan art"},
+  // Removed: papergames→good-smile (no confirmed figure partnership)
+
+  // Shift Up
+  {from:"shift-up",to:"tencent",type:"invest",label:"Tencent invested"},
+
+  // Kuro Games
+  {from:"kuro-games",to:"tencent",type:"invest",label:"Tencent owns 51.4%"},
+  {from:"kuro-games",to:"pixiv",type:"influence",label:"PGR/WuWa fan art"},
+
+  // Nexon
+  {from:"nexon",to:"yostar",type:"license",label:"Blue Archive license"},
+  {from:"nexon",to:"bilibili",type:"distribute",label:"China distribution"},
+
+  // NetEase
+  {from:"netease",to:"tencent",type:"influence",label:"Industry rivals"},
+  {from:"netease",to:"bilibili",type:"distribute",label:"Game streaming"},
+
+  // Lasengle / FGO → Aniplex
+  {from:"lasengle",to:"aniplex",type:"subsidiary",label:"Aniplex subsidiary"},
+  {from:"lasengle",to:"type-moon",type:"license",label:"Fate IP license"},
+
+  // Cross-game-anime connections
+  // Removed: mihoyo↔ufotable (no real business relationship)
+  {from:"cygames",to:"nexon",type:"influence",label:"Gacha game competitors"},
+
+  // === NEW AI STARTUPS ===
+  // Removed: viggle↔runway (no confirmed partnership)
+  // Removed: morphic↔mappa (no business relationship), morphic↔stability-ai (unverified)
+  {from:"spellbrush",to:"midjourney",type:"tech",label:"niji・journey collaboration"},
+  // Removed: pixai↔pixiv, yodayo↔character-ai (no real partnership, just market overlap)
+  {from:"tensor-art",to:"civitai",type:"tech",label:"Anime model hub ecosystem"},
+  {from:"tensor-art",to:"comfyui",type:"tech",label:"Workflow + model sharing"},
+  // Removed all speculative AI startup↔established company connections.
+  // These were hypothetical "could use" relationships, not real business partnerships.
+  // Kept only confirmed connections (e.g. spellbrush↔midjourney niji-journey).
+  // Removed: neuro-sama↔hololive (cultural observation, not business), neuro-sama↔character-ai (different tech stacks)
+  // Removed: neuro-sama↔elevenlabs (uses custom TTS, not confirmed ElevenLabs)
+  {from:"neuro-sama",to:"live2d",type:"tech",label:"Live2D avatar"},
+];
+
+const GROUPS = [
+  // Only show group enclosures for members that are geographically close on the map
+  {id:"hito",name:"Hitotsubashi Group\n一ツ橋グループ",members:["shueisha","shogakukan","kobunsha"],color:"#8b5cf6"},
+  // Sony group is shown via connection lines instead — members are too spread out for a box
+];
+
+const CREATOR_LOGO = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="24" fill="#ff6b9d"/><path d="M30 90l12-36 44-16 12 12-16 44-36 12z" fill="#fff"/><path d="M69 47l12 12" stroke="#ff6b9d" stroke-width="6" stroke-linecap="round"/><circle cx="40" cy="88" r="6" fill="#ff6b9d"/></svg>')}`;
+
+// Company nodes with positions (hand-placed for good layout)
+// x,y coordinates on a virtual 5000x3200 canvas
+// size = visual importance (radius)
+const NODES = [
+  // === IP CREATION (left side, y ~300-700) ===
+  {id:"individual-creators",name:"Manga Artists\n& Authors",layer:"ip",x:200,y:400,size:30,type:"Creators",logo:CREATOR_LOGO,desc:"Individual creators who originate the IP: mangaka, light novel authors, original story writers."},
+  {id:"type-moon",name:"Type-Moon",layer:"ip",x:120,y:600,size:18,type:"Game Studio",status:"NP",domain:"typemoon.com",desc:"Visual novel studio behind the Fate franchise.",ips:["Fate/stay night","Tsukihime"]},
+  {id:"cygames",name:"Cygames",layer:"ip",x:300,y:620,size:22,type:"Game Studio",status:"NP",revenue:"~$1B",domain:"cygames.co.jp",desc:"Game developer under CyberAgent. Major IP crossing into anime.",ips:["Granblue Fantasy","Uma Musume"]},
+  {id:"cyberagent",name:"CyberAgent",layer:"ip",x:300,y:780,size:24,type:"Internet / Games",status:"P",revenue:"$5.2B",mc:"$5.3B",domain:"cyberagent.co.jp",desc:"Parent of Cygames. Internet advertising giant with major game/anime business.",ips:["Uma Musume","AbemaTV"]},
+  {id:"key",name:"Key",layer:"ip",x:200,y:720,size:14,type:"VN Studio",status:"NP",domain:"key.visualarts.gr.jp",desc:"Visual novel studio: Clannad, Angel Beats!",ips:["Clannad","Angel Beats!"]},
+
+  // === PUBLISHING (x ~500-900, y ~200-800) ===
+  {id:"shueisha",name:"Shueisha\n集英社",layer:"pub",x:650,y:300,size:35,type:"Publisher",status:"NP",revenue:"~$1.5B",domain:"shueisha.co.jp",desc:"Publisher of Weekly Shonen Jump. Home to One Piece, Dragon Ball, Naruto, JJK.",ips:["One Piece","Dragon Ball","Naruto","Jujutsu Kaisen","Demon Slayer"],group:"hito"},
+  {id:"shogakukan",name:"Shogakukan\n小学館",layer:"pub",x:650,y:480,size:28,type:"Publisher",status:"NP",revenue:"~$800M",domain:"shogakukan.co.jp",desc:"Sister company of Shueisha. Detective Conan, Doraemon, Frieren.",ips:["Detective Conan","Doraemon","Frieren"],group:"hito"},
+  {id:"kobunsha",name:"Kobunsha\n光文社",layer:"pub",x:540,y:420,size:14,type:"Publisher",status:"NP",domain:"kobunsha.co.jp",desc:"Mid-size publisher in the Hitotsubashi group.",group:"hito"},
+  {id:"kodansha",name:"Kodansha\n講談社",layer:"pub",x:850,y:350,size:32,type:"Publisher",status:"NP",revenue:"~$1.5B",domain:"kodansha.co.jp",desc:"One of Japan's largest publishers. Attack on Titan, Blue Lock.",ips:["Attack on Titan","Blue Lock","Fairy Tail"]},
+  {id:"kadokawa",name:"Kadokawa\n角川",layer:"pub",x:800,y:560,size:35,type:"Publisher / Conglomerate",status:"P",revenue:"$1.85B",mc:"$3B",domain:"kadokawa.co.jp",logo:"https://static.kadokawa.co.jp/common/img/logo_kadokawa.png",desc:"Most digitized publisher. Dominates isekai/light novel market. Tencent-linked holdings have changed over time.",ips:["Re:Zero","SAO","Overlord","KonoSuba"]},
+  {id:"square-enix",name:"Square\nEnix",layer:"pub",x:900,y:720,size:28,type:"Publisher / Game",status:"P",revenue:"$2.1B",mc:"$6.5B",domain:"square-enix.com",desc:"Game giant with manga publishing (Gangan). Revenue declining but strong IP portfolio.",ips:["Fullmetal Alchemist","Final Fantasy"]},
+
+  // === DIGITAL MANGA / WEBTOON PLATFORMS ===
+  {id:"piccoma",name:"Piccoma\n(Kakao)",layer:"pub",x:500,y:700,size:26,type:"Digital Manga/Webtoon",status:"NP",revenue:"~$700M",domain:"piccoma.com",desc:"Japan's #1 manga/webtoon app by consumer spending (2024). Owned by Kakao Entertainment. Roughly $0.7B annual sales scale. Bridging Korean webtoon and Japanese manga."},
+  {id:"webtoon-ent",name:"WEBTOON\n(Naver)",layer:"pub",x:700,y:780,size:28,type:"Webtoon Platform",status:"P",revenue:"$1.35B",mc:"~$1.7B",domain:"webtoon.com",desc:"World's largest webtoon platform. LINE Manga ($648M, Japan's #1). IPO'd on NASDAQ 2024. Solo Leveling, Tower of God anime adaptations.",ips:["Solo Leveling","Tower of God","The Beginning After the End"]},
+
+  // === ANIMATION STUDIOS (center, x ~1200-1700, y ~100-900) ===
+  {id:"toei",name:"Toei\nAnimation",layer:"studio",x:1300,y:200,size:32,type:"Studio",status:"P",revenue:"~$550M",mc:"$3.6B",domain:"toei-animation.com",desc:"One of the oldest studios. One Piece, Dragon Ball, Precure.",ips:["One Piece","Dragon Ball","Precure"]},
+  {id:"mappa",name:"MAPPA",layer:"studio",x:1500,y:320,size:28,type:"Studio",status:"NP",domain:"mappa.co.jp",desc:"Fast-rising studio. Jujutsu Kaisen, AoT Final, Chainsaw Man.",ips:["Jujutsu Kaisen","AoT Final","Chainsaw Man"]},
+  {id:"ufotable",name:"ufotable",layer:"studio",x:1350,y:420,size:26,type:"Studio",status:"NP",domain:"ufotable.com",desc:"Jaw-dropping VFX. Demon Slayer, Fate series.",ips:["Demon Slayer","Fate series"]},
+  {id:"kyoani",name:"Kyoto\nAnimation",layer:"studio",x:1200,y:520,size:22,type:"Studio",status:"NP",domain:"kyotoanimation.co.jp",desc:"Beloved studio. Salaried animators model. Violet Evergarden, K-On!",ips:["Violet Evergarden","K-On!"]},
+  {id:"wit",name:"WIT Studio",layer:"studio",x:1550,y:480,size:20,type:"Studio",status:"NP",domain:"witstudio.co.jp",desc:"AoT S1-3, Spy × Family, Ranking of Kings.",ips:["AoT S1-3","Spy × Family"]},
+  {id:"a1",name:"A-1 Pictures",layer:"studio",x:1400,y:600,size:22,type:"Studio",status:"NP",domain:"a1p.jp",desc:"Sony/Aniplex subsidiary. SAO, Kaguya-sama.",ips:["SAO","Kaguya-sama","86"]},
+  {id:"cloverworks",name:"CloverWorks",layer:"studio",x:1250,y:680,size:18,type:"Studio",status:"NP",domain:"cloverworks.co.jp",desc:"Spun off from A-1. Bocchi, Spy × Family.",ips:["Bocchi the Rock!","Spy × Family"]},
+  {id:"bones",name:"Bones",layer:"studio",x:1600,y:600,size:22,type:"Studio",status:"NP",domain:"bones.co.jp",desc:"Fluid action. MHA, Mob Psycho 100, FMA:B.",ips:["My Hero Academia","Mob Psycho 100"]},
+  {id:"madhouse",name:"Madhouse",layer:"studio",x:1500,y:730,size:20,type:"Studio",status:"NP",domain:"madhouse.co.jp",desc:"Legendary studio. Death Note, OPM S1, Frieren.",ips:["Death Note","OPM S1","Frieren"]},
+  {id:"production-ig",name:"Production\nI.G",layer:"studio",x:1650,y:180,size:20,type:"Studio (IG Port)",status:"P",revenue:"~$95M",mc:"~$155M",domain:"production-ig.com",desc:"Ghost in the Shell, Psycho-Pass, Haikyuu!! Parent IG Port is public.",ips:["Ghost in the Shell","Haikyuu!!"]},
+  {id:"trigger",name:"Trigger",layer:"studio",x:1700,y:400,size:18,type:"Studio",status:"NP",domain:"st-trigger.co.jp",logo:"https://www.google.com/s2/favicons?domain=st-trigger.co.jp&sz=256",desc:"Over-the-top style. Kill la Kill, Cyberpunk: Edgerunners.",ips:["Kill la Kill","Cyberpunk: Edgerunners"]},
+  {id:"ghibli",name:"Studio\nGhibli",layer:"studio",x:1150,y:350,size:28,type:"Studio",status:"NP",domain:"ghibli.jp",desc:"Most internationally recognized anime studio. Spirited Away, Totoro.",ips:["Spirited Away","Totoro","Mononoke"]},
+
+  // === PRODUCTION COMMITTEES & CONGLOMERATES (x ~1900-2200, y ~200-600) ===
+  {id:"sony-group",name:"Sony Group",layer:"comm",x:2200,y:350,size:42,type:"Conglomerate",status:"P",revenue:"$88B",mc:"$130B",domain:"sony.com",desc:"Global entertainment & tech giant. Owns Aniplex, Crunchyroll, A-1 Pictures, Sony Music. Anime is a key growth pillar.",ips:["PlayStation","Demon Slayer","FGO"]},
+  {id:"aniplex",name:"Aniplex",layer:"comm",x:1950,y:350,size:30,type:"Producer / Licensor",status:"NP",revenue:"~$2B",domain:"aniplex.co.jp",desc:"Sony Music's anime subsidiary. Funds & controls many top anime. Operates FGO mobile game.",ips:["Demon Slayer (prod)","FGO"]},
+  {id:"bandai-namco",name:"Bandai\nNamco",layer:"comm",x:2100,y:180,size:38,type:"Conglomerate",status:"P",revenue:"$7.5B",mc:"$18B",domain:"bandainamco.co.jp",desc:"Toys, games, anime production. Gundam, Dragon Ball merch empire.",ips:["Gundam","Dragon Ball (toys)","Tamagotchi"],group:"bn"},
+  {id:"toho",name:"Toho",layer:"comm",x:2050,y:480,size:28,type:"Film Distributor",status:"P",revenue:"$2B",mc:"$8.6B",domain:"toho.co.jp",desc:"Japan's largest film distributor. Distributes top anime films.",ips:["Godzilla","JJK0 (film)","Suzume"]},
+  {id:"sony-music",name:"Sony Music\nJapan",layer:"comm",x:1900,y:520,size:18,type:"Music / Production",status:"NP",domain:"sonymusic.co.jp",desc:"Anime music production, parent of Aniplex."},
+  {id:"tencent",name:"Tencent",layer:"comm",x:2300,y:550,size:40,type:"Tech Conglomerate",status:"P",revenue:"$97B",mc:"$645B",domain:"tencent.com",desc:"China's tech giant with major anime investments. Owns stake in Kadokawa, investor in Bilibili. Tencent Animation & Comics platform."},
+
+  // === DISTRIBUTION (x ~2500-2900, y ~200-700) ===
+  {id:"crunchyroll",name:"Crunchyroll",layer:"dist",x:2650,y:300,size:32,type:"Streaming",status:"NP",revenue:"~$1.2B",domain:"crunchyroll.com",desc:"World's largest anime streaming. 17M+ paid subs. Sony-owned via Sony Pictures."},
+  {id:"netflix",name:"Netflix",layer:"dist",x:2800,y:200,size:28,type:"Streaming",status:"P",mc:"$280B",domain:"netflix.com",desc:"Global streaming giant with major anime investment."},
+  {id:"bilibili",name:"Bilibili",layer:"dist",x:2750,y:450,size:28,type:"Streaming / Community",status:"P",revenue:"$4B",mc:"$10.3B",domain:"bilibili.com",desc:"China's leading anime/ACG platform. 340M+ MAU."},
+  {id:"amazon",name:"Amazon\nPrime",layer:"dist",x:2900,y:350,size:20,type:"Streaming",status:"P",domain:"amazon.com",desc:"Selectively licensing anime content."},
+  {id:"disney-plus",name:"Disney+",layer:"dist",x:2900,y:500,size:18,type:"Streaming",status:"P",domain:"disneyplus.com",desc:"Expanding anime catalog."},
+  {id:"tv-tokyo",name:"TV Tokyo",layer:"dist",x:2550,y:550,size:20,type:"Broadcast",status:"P",domain:"tv-tokyo.co.jp",desc:"Key anime broadcaster. Naruto, Bleach, Pokémon.",ips:["Naruto","Bleach","Pokémon"]},
+
+  // === MERCHANDISING (x ~2500-2900, y ~800-1100) ===
+  {id:"good-smile",name:"Good Smile\nCompany",layer:"merch",x:2600,y:850,size:24,type:"Figures",status:"NP",revenue:"~$250M",domain:"goodsmile.info",desc:"Nendoroid & figma lines. Leading anime figures worldwide."},
+  {id:"bandai-spirits",name:"Bandai\nSpirits",layer:"merch",x:2450,y:950,size:22,type:"Toys / Models",status:"NP",domain:"bandai-hobby.net",desc:"Gunpla is a multi-billion dollar business.",ips:["Gunpla","S.H.Figuarts"],group:"bn"},
+  {id:"kotobukiya",name:"Kotobukiya",layer:"merch",x:2750,y:950,size:16,type:"Figures",status:"P",revenue:"~$110M",mc:"~$80M",domain:"kotobukiya.co.jp",desc:"High-quality scale figures and model kits."},
+  {id:"bushiroad",name:"Bushiroad",layer:"merch",x:2600,y:1060,size:20,type:"Card Games",status:"P",revenue:"~$370M",mc:"~$260M",domain:"bushiroad.com",desc:"Trading card games & multimedia franchises.",ips:["BanG Dream!","Weiss Schwarz"]},
+  {id:"animate",name:"Animate",layer:"merch",x:2850,y:830,size:16,type:"Retail",status:"NP",domain:"animate.co.jp",desc:"Japan's largest anime merch retail chain."},
+  {id:"razer",name:"Razer",layer:"merch",x:2850,y:1050,size:20,type:"Gaming Hardware",status:"P",revenue:"$1.6B",mc:"$3.2B",domain:"razer.com",desc:"Gaming hardware with anime/otaku collab products. Frequent anime-branded peripherals."},
+
+  // === EVENTS (x ~1800-2200, y ~900-1200) ===
+  {id:"comiket",name:"Comiket",layer:"event",x:1900,y:950,size:24,type:"Convention",domain:"comiket.co.jp",desc:"World's largest doujinshi fair. 500K+ attendees."},
+  {id:"anime-expo",name:"Anime\nExpo",layer:"event",x:2100,y:900,size:18,type:"Convention",domain:"anime-expo.org",desc:"Largest anime con in North America."},
+  {id:"anime-japan",name:"AnimeJapan",layer:"event",x:2000,y:1080,size:16,type:"Convention",domain:"anime-japan.jp",desc:"Japan's largest anime industry event."},
+
+  // === FAN ECONOMY (x ~1200-1700, y ~1000-1300) ===
+  {id:"pixiv",name:"pixiv",layer:"fan",x:1350,y:1050,size:24,type:"Platform",status:"NP",revenue:"~$22M",domain:"pixiv.net",desc:"Japan's largest illustration community. 84M+ users."},
+  {id:"hololive",name:"Hololive\n(Cover Corp)",layer:"fan",x:1550,y:1000,size:24,type:"VTuber Agency",status:"P",revenue:"~$200M",mc:"$680M",domain:"hololivepro.com",desc:"Leading VTuber agency. Pioneered idol-VTuber model. IPO'd on TSE Growth."},
+  {id:"nijisanji",name:"Nijisanji\n(ANYCOLOR)",layer:"fan",x:1550,y:1150,size:20,type:"VTuber Agency",status:"P",revenue:"~$180M",mc:"$1.7B",domain:"nijisanji.jp",desc:"Major VTuber agency. Public on TSE."},
+  {id:"booth",name:"BOOTH",layer:"fan",x:1250,y:1150,size:14,type:"Marketplace",status:"NP",domain:"booth.pm",desc:"pixiv's marketplace for fan-created content."},
+  {id:"dlsite",name:"DLsite",layer:"fan",x:1400,y:1200,size:14,type:"Marketplace",status:"NP",domain:"dlsite.com",desc:"Digital distribution for doujin works."},
+  {id:"live2d",name:"Live2D",layer:"fan",x:1200,y:1000,size:16,type:"Tech / Animation Tool",status:"NP",revenue:"~$1M",domain:"live2d.com",desc:"2D animation technology powering VTuber avatars. Used by Hololive, Nijisanji, and thousands of indie VTubers."},
+
+  // === GAMING / ACG GAMES (x ~100-700, y ~900-1350) ===
+  {id:"mihoyo",name:"miHoYo\nHoYoverse",layer:"game",x:200,y:950,size:42,type:"Game Developer",status:"NP",revenue:"~$7B",domain:"hoyoverse.com",desc:"China's most valuable game studio. Genshin Impact ($7B+ lifetime), Honkai: Star Rail ($2B+ in 2 yrs). Valued at $24.2B. Bootstrapped, no external funding.",ips:["Genshin Impact","Honkai: Star Rail","Honkai Impact 3rd","Zenless Zone Zero"]},
+  {id:"hypergryph",name:"Hypergryph",layer:"game",x:400,y:900,size:26,type:"Game Developer",status:"NP",revenue:"~$400M",domain:"hypergryph.com",desc:"Developer of Arknights. Arknights: Endfield hit $173M in 2 weeks (2026). Strong anime-style tower defense IP.",ips:["Arknights","Arknights: Endfield"]},
+  {id:"papergames",name:"Papergames\nInfold",layer:"game",x:350,y:1080,size:28,type:"Game Developer",status:"NP",revenue:"~$1B",domain:"papegames.com",desc:"Love and Deepspace ($450M+ in first year), Infinity Nikki ($15M debut month). Female-focused game powerhouse. Made founder a billionaire.",ips:["Love and Deepspace","Infinity Nikki","Shining Nikki"]},
+  {id:"shift-up",name:"Shift Up",layer:"game",x:550,y:1000,size:22,type:"Game Developer",status:"P",revenue:"$151M",mc:"~$1.4B",domain:"shiftup.co.kr",desc:"Korean studio. NIKKE ($1B+ lifetime), Stellar Blade. IPO'd on KOSDAQ 2024. Tencent invested.",ips:["NIKKE","Stellar Blade"]},
+  {id:"kuro-games",name:"Kuro Games",layer:"game",x:550,y:1150,size:22,type:"Game Developer",status:"NP",revenue:"~$150M",domain:"kurogames.com",desc:"Wuthering Waves ($190M+ in 2025), Punishing: Gray Raven. Tencent owns 51.4% stake.",ips:["Wuthering Waves","Punishing: Gray Raven"]},
+  {id:"nexon",name:"Nexon",layer:"game",x:700,y:920,size:32,type:"Game Publisher",status:"P",revenue:"~$3B",mc:"$20B",domain:"nexon.co.jp",desc:"Korean-founded, Tokyo-listed game giant. Blue Archive, MapleStory, The First Descendant.",ips:["Blue Archive","MapleStory","The First Descendant"]},
+  {id:"netease",name:"NetEase",layer:"game",x:150,y:1150,size:36,type:"Tech / Gaming",status:"P",revenue:"$14.4B",mc:"$78B",domain:"netease.com",desc:"China's #2 gaming giant after Tencent. Identity V, Marvel Rivals, Naraka: Bladepoint. Strong anime-style game portfolio.",ips:["Identity V","Marvel Rivals","Naraka: Bladepoint"]},
+  {id:"yostar",name:"Yostar",layer:"game",x:550,y:850,size:18,type:"Game Publisher",status:"NP",domain:"yo-star.com",desc:"Publisher of Arknights, Azur Lane, Blue Archive (global). Also owns Yostar Pictures anime studio in Tokyo.",ips:["Arknights (pub)","Azur Lane","Blue Archive (pub)"]},
+  {id:"lasengle",name:"Lasengle",layer:"game",x:200,y:1280,size:18,type:"Game Developer",status:"NP",domain:"lasengle.co.jp",desc:"Developer of Fate/Grand Order ($7B+ lifetime revenue). Aniplex subsidiary (formerly DelightWorks). FGO service ending March 2026.",ips:["Fate/Grand Order"]},
+
+  // === AI & TECHNOLOGY (x ~600-1100, y ~1400-2000) ===
+  // -- AI Image Generation --
+  {id:"midjourney",name:"Midjourney",layer:"aitech",x:400,y:1500,size:32,type:"AI Image Gen",status:"NP",revenue:"$500M",domain:"midjourney.com",desc:"AI image generation. $500M revenue, bootstrapped, no VC. Massive anime art community. ~21M Discord users."},
+  {id:"stability-ai",name:"Stability AI",layer:"aitech",x:600,y:1450,size:26,type:"AI Image Gen",status:"NP",revenue:"~$50M",funding:"$225M raised",domain:"stability.ai",desc:"Open-source AI models (Stable Diffusion). Foundation for most anime AI art tools. Valued at ~$1B."},
+  {id:"civitai",name:"CivitAI",layer:"aitech",x:600,y:1600,size:20,type:"AI Model Hub",status:"NP",funding:"$5.1M (Seed, a16z)",domain:"civitai.com",desc:"Largest community for sharing AI art models. Hub for anime-style LoRAs and checkpoints. Valued at $20M."},
+  {id:"novelai",name:"NovelAI",layer:"aitech",x:400,y:1650,size:18,type:"AI Writing + Art",status:"NP",revenue:"~$5M",domain:"novelai.net",desc:"AI writing & anime image gen. Bootstrapped. Popular for anime-specific models trained on Danbooru."},
+  // -- AI Video Generation --
+  {id:"runway",name:"Runway",layer:"aitech",x:850,y:1450,size:26,type:"AI Video Gen",status:"NP",revenue:"$122M",funding:"$545M raised",domain:"runwayml.com",desc:"AI video generation leader. Potential to transform anime production pipelines. Valued at $3-5B."},
+  {id:"pika",name:"Pika",layer:"aitech",x:1050,y:1450,size:20,type:"AI Video Gen",status:"NP",revenue:"~$8M",funding:"$135M raised",domain:"pika.art",desc:"AI video generation startup. Founded by Stanford AI PhDs. Valued at ~$700M."},
+  {id:"luma-ai",name:"Luma AI",layer:"aitech",x:1050,y:1580,size:20,type:"AI Video Gen",status:"NP",funding:"$157M raised",domain:"lumalabs.ai",desc:"AI video & 3D gen (Dream Machine). Raised $90M Series C. Seeking $3.2B valuation."},
+  // -- AI Voice & Audio --
+  {id:"elevenlabs",name:"ElevenLabs",layer:"aitech",x:850,y:1600,size:26,type:"AI Voice",status:"NP",revenue:"~$90M ARR",funding:"$281M raised",domain:"elevenlabs.io",desc:"AI voice synthesis leader. Anime dubbing potential. Valued at $11B (Feb 2026). Eyes IPO."},
+  // -- AI Characters & Companions --
+  {id:"character-ai",name:"Character.AI",layer:"aitech",x:650,y:1800,size:28,type:"AI Chatbot",status:"NP",revenue:"~$30-50M",funding:"$193M raised",domain:"character.ai",desc:"AI character chatbots. Hugely popular for anime character roleplay. Valued at ~$1B. Google partnership."},
+  // -- AI Anime-Specific Tools --
+  {id:"comfyui",name:"ComfyUI",layer:"aitech",x:400,y:1800,size:16,type:"AI Workflow Tool",status:"NP",domain:"comfyui.com",desc:"Open-source node-based UI for Stable Diffusion. De facto standard for anime AI art workflows."},
+  // -- AI Animation / Motion --
+  {id:"viggle",name:"Viggle",layer:"aitech",x:1050,y:1750,size:18,type:"AI Character Animation",status:"NP",funding:"$19M raised",domain:"viggle.ai",desc:"AI character animation. Investors: Alphabet, a16z. Makes animation accessible to non-animators."},
+  {id:"morphic",name:"Morphic",layer:"aitech",x:850,y:1800,size:16,type:"AI Anime Studio",status:"NP",domain:"morphic.pro",desc:"AI anime production studio by ex-Polygon CEO. Producing DQN anime series. $1M creator fund."},
+  {id:"spellbrush",name:"Spellbrush",layer:"aitech",x:1180,y:1520,size:20,type:"AI Anime Image",status:"NP",domain:"spellbrush.com",desc:"Startup behind niji・journey, an anime-focused image model made with Midjourney. Strong fit for anime-style generation workflows."},
+  {id:"pixai",name:"PixAI",layer:"aitech",x:1260,y:1650,size:20,type:"AI Anime Art Platform",status:"NP",domain:"pixai.art",desc:"Anime-focused AI art platform with models and character-style workflows tailored to manga/anime creators."},
+  {id:"yodayo",name:"Yodayo",layer:"aitech",x:1120,y:1880,size:18,type:"AI Anime Community",status:"NP",domain:"yodayo.com",desc:"Anime-native AI creation + character chat community focused on otaku use cases and fandom interaction."},
+  {id:"tensor-art",name:"Tensor.Art",layer:"aitech",x:920,y:1930,size:18,type:"AI Model Hub",status:"NP",domain:"tensor.art",desc:"Model-sharing platform with strong anime/illustration creator activity, including Stable Diffusion workflows."},
+  {id:"holara",name:"Holara",layer:"aitech",x:700,y:1930,size:16,type:"AI Anime Image",status:"NP",domain:"holara.ai",desc:"Anime-specialized image generation startup focused on stylistic control for manga/anime aesthetics."},
+  {id:"waifu-labs",name:"Waifu Labs",layer:"aitech",x:520,y:1930,size:16,type:"AI Character Gen",status:"NP",domain:"waifulabs.com",desc:"Early AI anime character generator startup (Sizigi) used for rapid character concepting and game/anime-style ideation."},
+  {id:"siremo",name:"Siremo",layer:"aitech",x:1380,y:1880,size:15,type:"AI VTuber Tooling",status:"NP",domain:"siremo.co.jp",desc:"Japanese startup focused on AI VTuber operation tooling, including autonomous live-stream assistance."},
+  {id:"scenario",name:"Scenario",layer:"aitech",x:1500,y:1540,size:22,type:"AI Asset Platform",status:"NP",domain:"scenario.com",desc:"B2B generative content platform used for game and media asset production. Strong fit for concept art, UI assets, and style-consistent pipelines."},
+  {id:"inworld",name:"Inworld AI",layer:"aitech",x:1600,y:1660,size:22,type:"AI NPC / Voice",status:"NP",domain:"inworld.ai",desc:"Real-time AI character and voice stack for games/media. Applicable to anime-style NPC interaction and live-service story content."},
+  {id:"kaedim",name:"Kaedim",layer:"aitech",x:1500,y:1790,size:20,type:"AI 3D Assets",status:"NP",domain:"kaedim3d.com",desc:"AI-assisted 2D-to-3D asset production service for studios. Relevant for anime game environments and merch/figure previsualization."},
+  {id:"deepdub",name:"Deepdub",layer:"aitech",x:1660,y:1520,size:20,type:"AI Dubbing",status:"NP",domain:"deepdub.ai",desc:"Localization and dubbing platform focused on production voice workflows. Applicable to anime multilingual release operations."},
+  {id:"respeecher",name:"Respeecher",layer:"aitech",x:1700,y:1780,size:20,type:"AI Voice Cloning",status:"NP",domain:"respeecher.com",desc:"AI voice cloning technology used in film, animation, and games. Strong relevance for dubbing continuity and character voice reuse."},
+  {id:"code27",name:"CODE27",layer:"aitech",x:1820,y:1640,size:17,type:"AI Companion Device",status:"NP",domain:"www.code27.co",desc:"Anime-inspired AI companion hardware startup (Ropet) focused on emotionally expressive character devices and consumer AI companionship."},
+  {id:"dipal",name:"Dipal AI",layer:"aitech",x:1820,y:1880,size:16,type:"AI Companion Device",status:"NP",domain:"www.dipal.net",desc:"AI companion hardware startup building embodied AI interaction products, relevant to anime character companion use-cases."},
+
+  // === CASE STUDY: AI VTuber ===
+  {id:"neuro-sama",name:"Neuro-sama",layer:"fan",x:1700,y:1080,size:20,type:"AI VTuber",status:"NP",domain:"twitch.tv",desc:"AI-powered VTuber by Vedal987. #1 most-subscribed on Twitch (160K+ active subs, ~1M followers). Proof that AI + anime characters = massive engagement."},
+];
+
+const ACG_AI_PROFILE = {
+  "spellbrush": { relevance:"core", focus:"Anime image models", opps:["Anime-native model infra (B2B API)", "Enterprise-safe style control for studios"] },
+  "pixai": { relevance:"core", focus:"Anime creator tooling", opps:["Pro creator workflow (batch, QC, rights)", "Fan-to-pro merch asset pipeline"] },
+  "yodayo": { relevance:"core", focus:"Anime community + character AI", opps:["Character IP monetization stack", "Creator economy subscription tooling"] },
+  "tensor-art": { relevance:"core", focus:"Anime model hub", opps:["Model governance/licensing rails", "Studio-private model hosting"] },
+  "holara": { relevance:"core", focus:"Anime image generation", opps:["Manga panel production assistant", "Localized style packs by region"] },
+  "waifu-labs": { relevance:"core", focus:"Anime character generation", opps:["Character pre-vis for indie games", "Rapid cast prototyping for VN/anime"] },
+  "siremo": { relevance:"core", focus:"AI VTuber operations", opps:["Autonomous stream orchestration", "Agency-grade safety/compliance layer"] },
+  "morphic": { relevance:"core", focus:"AI anime production", opps:["Pilot-to-series AI pipeline", "Hybrid human+AI post-production stack"] },
+  "neuro-sama": { relevance:"core", focus:"AI VTuber proof point", opps:["Realtime AI persona orchestration", "Interactive fan economy products"] },
+  "scenario": { relevance:"core", focus:"Game/anime asset pipelines", opps:["Style-locked live-ops content generation", "Art direction QA + auto-iteration"] },
+  "inworld": { relevance:"core", focus:"NPC/character interaction", opps:["Anime RPG narrative agents", "Live-event character bots"] },
+  "kaedim": { relevance:"core", focus:"2D-to-3D production", opps:["Anime figure pre-production", "Game-ready 3D conversion at scale"] },
+  "deepdub": { relevance:"core", focus:"Anime dubbing localization", opps:["Simul-dub release workflows", "Localization QA automation"] },
+  "respeecher": { relevance:"core", focus:"Character voice continuity", opps:["Franchise voice consistency infra", "Cross-language character voice mapping"] },
+  "code27": { relevance:"core", focus:"Anime AI companion hardware", opps:["Character-native companion OS", "IP-licensed companion devices for fandom"] },
+  "dipal": { relevance:"adjacent", focus:"Embodied AI companion devices", opps:["Anime persona companion bundles", "Device + subscription fan engagement"] },
+  "comfyui": { relevance:"adjacent", focus:"Workflow engine", opps:["Managed pipelines for studios", "Template marketplace for anime workflows"] },
+  "civitai": { relevance:"adjacent", focus:"Model distribution", opps:["Rights-cleared anime model marketplace", "Enterprise moderation stack"] },
+  "midjourney": { relevance:"adjacent", focus:"General image gen", opps:["Anime-specific enterprise tier", "Storyboard-to-keyframe accelerators"] },
+  "stability-ai": { relevance:"adjacent", focus:"Foundation models", opps:["Anime tuned checkpoints/API", "On-prem generation for studios"] },
+  "runway": { relevance:"adjacent", focus:"General video gen", opps:["Anime inbetween/post suites", "Shot continuity control for series"] },
+  "pika": { relevance:"adjacent", focus:"Short-form video", opps:["Promo trailer auto-generation", "Social cutdown for anime/game IP"] },
+  "luma-ai": { relevance:"adjacent", focus:"Video/3D generation", opps:["Figure scanning + stylization", "3D scene pre-vis for anime games"] },
+  "character-ai": { relevance:"adjacent", focus:"General character chat", opps:["Licensed anime companions", "Official fandom engagement bots"] },
+  "elevenlabs": { relevance:"adjacent", focus:"General voice stack", opps:["Anime dubbing ops layer", "VTuber voice runtime tooling"] },
+  "novelai": { relevance:"adjacent", focus:"Anime writing + art", opps:["Publisher-facing script copilot", "Fan translation acceleration"] },
+  "viggle": { relevance:"adjacent", focus:"Character animation", opps:["UGC-to-anime motion pipelines", "Short-form anime creator tools"] }
+};
+
+const LAYER_SCATTER_OFFSETS = {
+  ip:    {x:-140, y:-120},
+  pub:   {x:0,    y:-150},
+  studio:{x:120,  y:-80},
+  comm:  {x:260,  y:-170},
+  dist:  {x:430,  y:-110},
+  merch: {x:470,  y:40},
+  event: {x:210,  y:200},
+  fan:   {x:40,   y:240},
+  aitech:{x:260,  y:340},
+  game:  {x:-170, y:180}
+};
+
+const LAYER_PIXEL_PATTERNS = {
+  ip: ["00110000","00111000","00011100","00001110","00000111","00000011","00000001","00000000"],
+  pub: ["11111100","10000100","10110100","10110100","10110100","10110100","10000100","11111100"],
+  studio: ["11111110","10000010","10111010","10111010","10000010","10111110","10000010","11111110"],
+  comm: ["00111100","01111110","11111111","11100111","11100111","11111111","01111110","00111100"],
+  dist: ["11000000","11100000","11110000","11111000","11110000","11100000","11000000","10000000"],
+  merch: ["11111110","10000010","10000010","11111110","10111010","10111010","10000010","11111110"],
+  event: ["00011000","00111100","11111111","01111110","00111100","01111110","11011011","00000000"],
+  fan: ["01100110","11111111","11111111","11111111","01111110","00111100","00011000","00000000"],
+  aitech: ["11111111","10000001","10111101","10100101","10100101","10111101","10000001","11111111"],
+  game: ["00000000","00111100","01111110","11100111","11111111","11011011","01000010","00000000"]
+};
+
+// ============================================================
+// CANVAS ENGINE
+// ============================================================
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+let DEFAULT_CAM = { x: 1400, y: 800, zoom: 0.23 };
+let cam = { ...DEFAULT_CAM }; // camera center in world coords
+let isDragging = false, dragStart = {x:0,y:0}, camStart = {x:0,y:0};
+let hoveredNode = null;
+let aiMode = false;
+let acgOnlyMode = false;
+let showAllConnections = true;
+let highConfidenceOnly = false;
+let showHypotheses = true;
+let investableMode = false;
+let legendCollapsed = false;
+let previousViewState = null;
+let searchQuery = '';
+let loadedLogos = {};
+let nodeDegreeMap = {};
+
+function getACGProfile(node) {
+  return ACG_AI_PROFILE[node.id] || null;
+}
+
+function buildNodeDegreeMap() {
+  nodeDegreeMap = {};
+  CONNECTIONS.forEach(c => {
+    nodeDegreeMap[c.from] = (nodeDegreeMap[c.from] || 0) + 1;
+    nodeDegreeMap[c.to] = (nodeDegreeMap[c.to] || 0) + 1;
+  });
+}
+
+function parseMoneyToMillions(text) {
+  if (!text) return null;
+  const m = String(text).replace(/,/g, '').match(/([0-9]+(?:\\.[0-9]+)?)\\s*([TBM])/i);
+  if (!m) return null;
+  const value = parseFloat(m[1]);
+  const unit = m[2].toUpperCase();
+  if (unit === 'T') return value * 1_000_000;
+  if (unit === 'B') return value * 1_000;
+  return value;
+}
+
+function computeImportanceScore(node) {
+  const layerRelevance = {
+    ip:0.95, pub:0.9, studio:0.98, comm:0.84, dist:0.88,
+    merch:0.7, event:0.62, fan:0.9, aitech:0.78, game:0.92
+  };
+
+  let relevance = layerRelevance[node.layer] || 0.7;
+  const acg = getACGProfile(node);
+  if (acg?.relevance === 'core') relevance = Math.min(1, relevance + 0.18);
+  if (acg?.relevance === 'adjacent') relevance = Math.min(1, relevance + 0.08);
+
+  const fame = Math.min(1, (node.ips?.length || 0) / 6);
+  const network = Math.min(1, (nodeDegreeMap[node.id] || 0) / 16);
+
+  const volumeM =
+    Math.max(
+      parseMoneyToMillions(node.revenue) || 0,
+      parseMoneyToMillions(node.mc) || 0,
+      parseMoneyToMillions(node.funding) || 0
+    );
+  const volume = volumeM > 0 ? Math.min(1, Math.log10(volumeM + 1) / 4.2) : 0;
+  const baseVisual = Math.min(1, node.size / 42);
+
+  // Subjective value function: anime relevance + influence + volume + network centrality.
+  const score = (
+    relevance * 0.34 +
+    volume * 0.24 +
+    fame * 0.18 +
+    network * 0.16 +
+    baseVisual * 0.08
+  );
+  return Math.max(0, Math.min(1, score));
+}
+
+function applyLayerScatter() {
+  NODES.forEach(node => {
+    const off = LAYER_SCATTER_OFFSETS[node.layer];
+    if (!off) return;
+    // Deterministic micro-jitter keeps dense clusters readable without random layout drift.
+    let h = 0;
+    for (let i = 0; i < node.id.length; i++) h = (h * 31 + node.id.charCodeAt(i)) >>> 0;
+    const angle = (h % 360) * Math.PI / 180;
+    const jitter = node.layer === 'aitech' ? 26 : 16;
+    node.x += off.x + Math.cos(angle) * jitter;
+    node.y += off.y + Math.sin(angle) * jitter;
+  });
+}
+
+function updateDefaultCameraFromNodes() {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  NODES.forEach(n => {
+    minX = Math.min(minX, n.x - n.size * 2);
+    minY = Math.min(minY, n.y - n.size * 2);
+    maxX = Math.max(maxX, n.x + n.size * 2);
+    maxY = Math.max(maxY, n.y + n.size * 2);
+  });
+  DEFAULT_CAM = { x: (minX + maxX) / 2, y: (minY + maxY) / 2, zoom: 0.22 };
+}
+
+function getConnMeta(conn) {
+  if (conn.type === 'influence') return { kind:'hypothesis', confidence:'low' };
+  if (conn.type === 'tech') return { kind:'potential', confidence:'med' };
+  if (conn.type === 'subsidiary' || conn.type === 'parent' || conn.type === 'group' || conn.type === 'platform') {
+    return { kind:'fact', confidence:'high' };
+  }
+  if (conn.type === 'invest') return { kind:'fact', confidence:'med' };
+  return { kind:'fact', confidence:'med' };
+}
+
+function syncToggleButtons() {
+  document.getElementById('aiToggle')?.classList.toggle('active', aiMode);
+  document.getElementById('acgToggle')?.classList.toggle('active', acgOnlyMode);
+  document.getElementById('allLinesToggle')?.classList.toggle('active', showAllConnections);
+  document.getElementById('confidenceToggle')?.classList.toggle('active', highConfidenceOnly);
+  document.getElementById('hypothesisToggle')?.classList.toggle('active', showHypotheses);
+  document.getElementById('investableToggle')?.classList.toggle('active', investableMode);
+}
+
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// World <-> Screen transforms
+function worldToScreen(wx, wy) {
+  return {
+    x: (wx - cam.x) * cam.zoom + W/2,
+    y: (wy - cam.y) * cam.zoom + H/2
+  };
+}
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - W/2) / cam.zoom + cam.x,
+    y: (sy - H/2) / cam.zoom + cam.y
+  };
+}
+
+// ============================================================
+// DRAWING
+// ============================================================
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#f8f8fb';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw region clouds (soft colored areas)
+  drawRegionClouds();
+
+  // Draw connections
+  drawConnections();
+
+  // Draw group enclosures
+  drawGroups();
+
+  // Draw nodes
+  NODES.forEach(node => drawNode(node));
+
+  // Draw region labels (large text)
+  drawRegionLabels();
+
+  // Draw AI overlay
+  if (aiMode) drawAIOverlay();
+}
+
+function drawRegionClouds() {
+  LAYERS.forEach(layer => {
+    const layerNodes = NODES.filter(n => n.layer === layer.id);
+    if (layerNodes.length === 0) return;
+
+    // Calculate bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    layerNodes.forEach(n => {
+      minX = Math.min(minX, n.x - n.size * 2.5);
+      minY = Math.min(minY, n.y - n.size * 2.5);
+      maxX = Math.max(maxX, n.x + n.size * 2.5);
+      maxY = Math.max(maxY, n.y + n.size * 2.5);
+    });
+
+    const pad = 60;
+    const p1 = worldToScreen(minX - pad, minY - pad - 40);
+    const p2 = worldToScreen(maxX + pad, maxY + pad);
+
+    const w = p2.x - p1.x;
+    const h = p2.y - p1.y;
+    const r = 16 * cam.zoom / 0.3;
+
+    // Filled background — very subtle
+    ctx.fillStyle = layer.color + '08';
+    ctx.beginPath();
+    roundRect(ctx, p1.x, p1.y, w, h, Math.min(r, 30));
+    ctx.fill();
+
+    // Border — dashed, colored
+    ctx.strokeStyle = layer.color + '30';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    roundRect(ctx, p1.x, p1.y, w, h, Math.min(r, 30));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Region label — as a tab/pill on top-left of the border
+    if (cam.zoom > 0.15) {
+      const labelText = layer.name.toUpperCase();
+      const labelFontSize = Math.max(10, Math.min(16, 13 * cam.zoom / 0.32));
+      ctx.font = `700 ${labelFontSize}px 'Space Grotesk'`;
+      const labelW = ctx.measureText(labelText).width + 34;
+      const labelH = labelFontSize + 10;
+      const labelX = p1.x + 12;
+      const labelY = p1.y - labelH / 2;
+
+      // Pill background
+      ctx.fillStyle = layer.color + '18';
+      ctx.strokeStyle = layer.color + '40';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      roundRect(ctx, labelX, labelY, labelW, labelH, labelH / 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Label text
+      ctx.fillStyle = layer.color + 'ff';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      drawPixelIcon(layer.id, labelX + 7, labelY + 3, 1.1, layer.color);
+      ctx.fillText(labelText, labelX + 24, labelY + labelH / 2);
+
+      // Sub description — next to pill
+      if (cam.zoom > 0.28) {
+        ctx.font = `400 ${labelFontSize * 0.7}px Inter`;
+        ctx.fillStyle = layer.color + 'd8';
+        ctx.textAlign = 'left';
+        ctx.fillText(layer.desc, labelX + labelW + 8, labelY + labelH / 2);
+      }
+
+      // Market size annotation — bottom-left inside the border
+      if (cam.zoom > 0.25 && layer.market) {
+        const annotY = p2.y - 14;
+        const annotX = p1.x + 16;
+        ctx.font = `600 ${Math.max(10, labelFontSize * 0.68)}px Inter`;
+        ctx.fillStyle = layer.color + 'f0';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(layer.market, annotX, annotY);
+      }
+
+      // Example annotation — bottom-left, below market
+      if (cam.zoom > 0.35 && layer.examples) {
+        const exY = p2.y - 4;
+        const exX = p1.x + 16;
+        ctx.font = `italic 400 ${Math.max(9, labelFontSize * 0.6)}px Inter`;
+        ctx.fillStyle = layer.color + 'c8';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(layer.examples, exX, exY);
+      }
+    }
+  });
+}
+
+function drawConnections() {
+  CONNECTIONS.forEach(conn => {
+    const meta = getConnMeta(conn);
+    if (!showAllConnections) {
+      if (highConfidenceOnly && meta.confidence !== 'high') return;
+      if (!showHypotheses && meta.kind === 'hypothesis') return;
+    }
+
+    const from = NODES.find(n => n.id === conn.from);
+    const to = NODES.find(n => n.id === conn.to);
+    if (!from || !to) return;
+
+    const p1 = worldToScreen(from.x, from.y);
+    const p2 = worldToScreen(to.x, to.y);
+
+    const isHighlighted = hoveredNode && (hoveredNode.id === conn.from || hoveredNode.id === conn.to);
+
+    // Set dash pattern based on connection type
+    const dashPattern = getConnDash(conn.type);
+    ctx.setLineDash(dashPattern);
+
+    ctx.beginPath();
+    // Curved line
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2;
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const cpX = midX - dy * 0.15;
+    const cpY = midY + dx * 0.15;
+    ctx.moveTo(p1.x, p1.y);
+    ctx.quadraticCurveTo(cpX, cpY, p2.x, p2.y);
+
+    if (isHighlighted) {
+      const hlAlpha = meta.confidence === 'high' ? 'dd' : (meta.confidence === 'med' ? 'bb' : '8a');
+      ctx.strokeStyle = getConnColor(conn.type) + hlAlpha;
+      ctx.lineWidth = meta.confidence === 'high' ? 2.8 : 2.1;
+    } else {
+      // Stronger default visibility when "All Lines" is ON.
+      const baseAlpha = showAllConnections
+        ? (
+            meta.kind === 'hypothesis' ? '30' :
+            meta.kind === 'potential' ? '42' :
+            (meta.confidence === 'high' ? '66' : '52')
+          )
+        : (
+            meta.kind === 'hypothesis' ? '10' :
+            meta.kind === 'potential' ? (meta.confidence === 'med' ? '1a' : '12') :
+            (meta.confidence === 'high' ? '35' : '1f')
+          );
+      ctx.strokeStyle = getConnColor(conn.type) + baseAlpha;
+      ctx.lineWidth = showAllConnections
+        ? (meta.confidence === 'high' ? 1.45 : 1.15)
+        : (meta.confidence === 'high' ? 1.2 : 0.9);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrow head for subsidiary/parent connections
+    if (isHighlighted && (conn.type === 'subsidiary' || conn.type === 'parent' || conn.type === 'invest')) {
+      const arrowSize = 6;
+      const angle = Math.atan2(p2.y - cpY, p2.x - cpX);
+      ctx.fillStyle = getConnColor(conn.type) + 'cc';
+      ctx.beginPath();
+      ctx.moveTo(p2.x, p2.y);
+      ctx.lineTo(p2.x - arrowSize * Math.cos(angle - 0.4), p2.y - arrowSize * Math.sin(angle - 0.4));
+      ctx.lineTo(p2.x - arrowSize * Math.cos(angle + 0.4), p2.y - arrowSize * Math.sin(angle + 0.4));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Label on highlighted connections
+    if (isHighlighted && conn.label && cam.zoom > 0.3) {
+      // Background for label
+      ctx.font = `600 ${11}px Inter`;
+      const kindTag = meta.kind === 'fact'
+        ? (meta.confidence === 'high' ? 'FACT-H' : 'FACT-M')
+        : (meta.kind === 'potential' ? 'POTENTIAL' : 'HYP');
+      const labelText = `${kindTag} · ${conn.label}`;
+      const labelW = ctx.measureText(labelText).width + 10;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillRect(cpX - labelW/2, cpY - 12, labelW, 16);
+      ctx.fillStyle = getConnColor(conn.type) + 'dd';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(labelText, cpX, cpY - 4);
+    }
+  });
+}
+
+function getConnDash(type) {
+  switch(type) {
+    case 'subsidiary': case 'parent': case 'group': return [];           // solid — ownership
+    case 'license':    return [6, 3];                                     // short dash — IP license
+    case 'produce':    case 'committee': return [10, 4];                  // medium dash — production
+    case 'distribute': return [4, 4];                                     // even dash — distribution
+    case 'invest':     return [2, 3];                                     // dotted — investment
+    case 'tech':       return [8, 3, 2, 3];                               // dash-dot — technology
+    case 'influence':  return [2, 6];                                     // sparse dot — influence
+    case 'platform':   return [6, 2, 2, 2];                               // dash-dot-dot — platform
+    default:           return [4, 4];
+  }
+}
+
+function getConnColor(type) {
+  const colors = {
+    license: '#FBBF24',
+    subsidiary: '#3b82f6',
+    group: '#3b82f6',
+    parent: '#8b5cf6',
+    produce: '#A78BFA',
+    distribute: '#60A5FA',
+    committee: '#ef4444',
+    invest: '#34D399',
+    platform: '#F472B6',
+    tech: '#0891b2',
+    influence: '#94a3b8'
+  };
+  return colors[type] || '#94a3b8';
+}
+
+function drawGroups() {
+  GROUPS.forEach(group => {
+    const members = NODES.filter(n => group.members.includes(n.id));
+    if (members.length < 2) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    members.forEach(n => {
+      minX = Math.min(minX, n.x - n.size - 15);
+      minY = Math.min(minY, n.y - n.size - 15);
+      maxX = Math.max(maxX, n.x + n.size + 15);
+      maxY = Math.max(maxY, n.y + n.size + 15);
+    });
+
+    const p1 = worldToScreen(minX, minY);
+    const p2 = worldToScreen(maxX, maxY);
+
+    ctx.strokeStyle = group.color + '40';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    const rr = 12;
+    roundRect(ctx, p1.x, p1.y, p2.x - p1.x, p2.y - p1.y, rr);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Group name
+    if (cam.zoom > 0.25) {
+      ctx.font = `600 ${Math.max(10, 11 * cam.zoom / 0.4)}px Inter`;
+      ctx.fillStyle = group.color + 'aa';
+      ctx.textAlign = 'left';
+      ctx.fillText(group.name, p1.x + 6, p1.y - 5);
+    }
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+}
+
+function drawPixelIcon(layerId, x, y, cell, color) {
+  const pattern = LAYER_PIXEL_PATTERNS[layerId];
+  if (!pattern) return;
+  ctx.save();
+  ctx.fillStyle = color + 'd0';
+  for (let row = 0; row < pattern.length; row++) {
+    for (let col = 0; col < pattern[row].length; col++) {
+      if (pattern[row][col] === '1') {
+        ctx.fillRect(x + col * cell, y + row * cell, cell, cell);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawNode(node) {
+  const layer = LAYERS.find(l => l.id === node.layer);
+  const p = worldToScreen(node.x, node.y);
+  const r = node.size * cam.zoom;
+
+  if (p.x + r < -50 || p.x - r > W + 50 || p.y + r < -50 || p.y - r > H + 50) return;
+
+  const isHovered = hoveredNode === node;
+  const isConnected = hoveredNode && CONNECTIONS.some(c =>
+    (c.from === hoveredNode.id && c.to === node.id) || (c.to === hoveredNode.id && c.from === node.id)
+  );
+  const isDimmed = hoveredNode && !isHovered && !isConnected;
+  const isSearchMatch = searchQuery && matchesSearch(node);
+  const isSearchDim = searchQuery && !isSearchMatch;
+  const acgProfile = getACGProfile(node);
+
+  let alpha = 1;
+  if (isDimmed) alpha = 0.15;
+  if (isSearchDim) alpha = 0.08;
+  if (acgOnlyMode) {
+    const isCore = acgProfile && acgProfile.relevance === 'core';
+    const inAIContext = node.layer === 'aitech' || !!acgProfile;
+    if (inAIContext && !isCore) alpha = Math.min(alpha, 0.12);
+    if (!inAIContext) alpha = Math.min(alpha, 0.28);
+  }
+
+  ctx.globalAlpha = alpha;
+
+  // Shadow
+  if (r > 6) {
+    ctx.shadowColor = 'rgba(0,0,0,0.12)';
+    ctx.shadowBlur = isHovered ? 16 : 8;
+    ctx.shadowOffsetY = isHovered ? 4 : 2;
+  }
+
+  // Glow for hovered/connected
+  if (isHovered || isConnected) {
+    ctx.shadowColor = layer.color + '50';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 0;
+  }
+
+  // White circle background (the node body)
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Reset shadow
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Colored border ring
+  ctx.strokeStyle = isHovered ? layer.color : layer.color + 'aa';
+  ctx.lineWidth = isHovered ? 3 : 2;
+  ctx.stroke();
+
+  // Search highlight ring
+  if (isSearchMatch) {
+    ctx.strokeStyle = '#0891b2';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  // Logo inside circle — make it big and prominent
+  const logo = loadedLogos[node.id];
+  const importance = computeImportanceScore(node);
+  if (logo && logo.complete && logo.naturalWidth > 0 && r > 4) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r - 2, 0, Math.PI * 2);
+    ctx.clip();
+    const imgSize = r * (1.55 + importance * 0.55);
+    ctx.drawImage(logo, p.x - imgSize/2, p.y - imgSize/2, imgSize, imgSize);
+    ctx.restore();
+  } else if (r > 4) {
+    // Fallback: colored letter
+    const fontSize = Math.max(11, r * (0.88 + importance * 0.12));
+    ctx.font = `700 ${fontSize}px 'Space Grotesk'`;
+    ctx.fillStyle = layer.color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const letter = node.name.replace('\n','').charAt(0).toUpperCase();
+    ctx.fillText(letter, p.x, p.y);
+  }
+
+  // Name label below
+  if (cam.zoom > 0.2 || isHovered) {
+    const fontSize = Math.max(10.5, Math.min(14, r * 0.65));
+    ctx.font = `600 ${fontSize}px Inter`;
+    ctx.fillStyle = '#1a1a2e';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    const lines = node.name.split('\n');
+    const lineH = fontSize * 1.3;
+    const startY = p.y + r + 5;
+    lines.forEach((line, i) => {
+      ctx.fillText(line, p.x, startY + i * lineH);
+    });
+
+    // Financial info below name
+    if (cam.zoom > 0.35 && (node.revenue || node.mc || node.funding)) {
+      ctx.font = `500 ${Math.max(10, fontSize * 0.75)}px Inter`;
+      ctx.fillStyle = '#8888a0';
+      const finY = startY + lines.length * lineH + 2;
+      let finText = [];
+      if (node.status === 'P') finText.push('Public');
+      if (node.status === 'NP') finText.push('Non-Public');
+      if (node.revenue) finText.push('R: ' + node.revenue);
+      if (node.mc) finText.push('MC: ' + node.mc);
+      if (node.funding) finText.push(node.funding);
+      ctx.fillText(finText.join(' · '), p.x, finY);
+    }
+  }
+
+  if (acgProfile && cam.zoom > 0.24) {
+    const isCore = acgProfile.relevance === 'core';
+    const tagText = isCore ? 'ACG CORE' : 'ACG ADJ';
+    const tagColor = isCore ? '#0891b2' : '#9ca3af';
+    ctx.font = '700 9px Inter';
+    const tw = ctx.measureText(tagText).width + 10;
+    const tx = p.x - tw / 2;
+    const ty = p.y - r - 16;
+    ctx.fillStyle = isCore ? 'rgba(8,145,178,0.14)' : 'rgba(156,163,175,0.16)';
+    ctx.strokeStyle = isCore ? 'rgba(8,145,178,0.45)' : 'rgba(156,163,175,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    roundRect(ctx, tx, ty, tw, 14, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = tagColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tagText, p.x, ty + 7);
+  }
+
+  ctx.globalAlpha = 1;
+}
+
+function drawRegionLabels() {
+  // Labels are now drawn inside drawRegionClouds() as pill tabs on the border
+}
+
+function drawAIOverlay() {
+  LAYERS.forEach(layer => {
+    const layerNodes = NODES.filter(n => n.layer === layer.id);
+    if (layerNodes.length === 0 || !layer.ai) return;
+
+    let cx = 0, cy = 0;
+    let maxY = -Infinity;
+    layerNodes.forEach(n => { cx += n.x; cy += n.y; maxY = Math.max(maxY, n.y + n.size); });
+    cx /= layerNodes.length;
+
+    const startP = worldToScreen(cx, maxY + 80);
+
+    if (startP.y < 0 || startP.y > H + 100 || startP.x < -200 || startP.x > W + 200) return;
+
+    const opps = acgOnlyMode
+      ? layer.ai.filter(opp => opp.i !== 'low')
+      : layer.ai;
+
+    opps.forEach((opp, i) => {
+      const y = startP.y + i * 44;
+      const x = startP.x;
+
+      // Background
+      ctx.fillStyle = 'rgba(8,145,178,0.05)';
+      ctx.strokeStyle = 'rgba(8,145,178,0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      roundRect(ctx, x - 120, y, 240, 36, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Left accent bar
+      ctx.fillStyle = '#0891b2';
+      ctx.fillRect(x - 120, y, 3, 36);
+
+      // Title
+      ctx.font = '600 11px Inter';
+      ctx.fillStyle = '#0891b2';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('⚡ ' + opp.t, x - 108, y + 5);
+
+      // Description
+      ctx.font = '500 10px Inter';
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillText(opp.d, x - 108, y + 20);
+
+      // Impact badge
+      const impactColors = {high:'#ef4444',med:'#d97706',low:'#059669'};
+      ctx.fillStyle = (impactColors[opp.i] || '#888') + '20';
+      ctx.beginPath();
+      roundRect(ctx, x + 80, y + 5, 35, 14, 3);
+      ctx.fill();
+      ctx.font = '700 9px Inter';
+      ctx.fillStyle = impactColors[opp.i] || '#888';
+      ctx.textAlign = 'center';
+      ctx.fillText(opp.i.toUpperCase(), x + 97.5, y + 8);
+    });
+  });
+}
+
+// ============================================================
+// INTERACTION
+// ============================================================
+function getNodeAt(sx, sy) {
+  const w = screenToWorld(sx, sy);
+  for (let i = NODES.length - 1; i >= 0; i--) {
+    const n = NODES[i];
+    const dx = w.x - n.x, dy = w.y - n.y;
+    if (dx * dx + dy * dy < (n.size + 5) * (n.size + 5)) return n;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousedown', e => {
+  isDragging = true;
+  dragStart = {x: e.clientX, y: e.clientY};
+  camStart = {x: cam.x, y: cam.y};
+  canvas.classList.add('grabbing');
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (isDragging) {
+    cam.x = camStart.x - (e.clientX - dragStart.x) / cam.zoom;
+    cam.y = camStart.y - (e.clientY - dragStart.y) / cam.zoom;
+    draw();
+    hideTooltip();
+    return;
+  }
+
+  const node = getNodeAt(e.clientX, e.clientY);
+  if (node !== hoveredNode) {
+    hoveredNode = node;
+    draw();
+    if (node) showTooltip(node, e.clientX, e.clientY);
+    else hideTooltip();
+  } else if (node) {
+    moveTooltip(e.clientX, e.clientY);
+  }
+  canvas.style.cursor = node ? 'pointer' : 'grab';
+});
+
+canvas.addEventListener('mouseup', e => {
+  const dx = Math.abs(e.clientX - dragStart.x);
+  const dy = Math.abs(e.clientY - dragStart.y);
+  if (dx < 5 && dy < 5) {
+    const node = getNodeAt(e.clientX, e.clientY);
+    if (node) openDetail(node);
+  }
+  isDragging = false;
+  canvas.classList.remove('grabbing');
+});
+
+canvas.addEventListener('mouseleave', () => {
+  isDragging = false;
+  hoveredNode = null;
+  canvas.classList.remove('grabbing');
+  hideTooltip();
+  draw();
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 0.9 : 1.1;
+  const newZoom = Math.max(0.15, Math.min(2.5, cam.zoom * factor));
+
+  // Zoom toward mouse position
+  const wx = (e.clientX - W/2) / cam.zoom + cam.x;
+  const wy = (e.clientY - H/2) / cam.zoom + cam.y;
+
+  cam.zoom = newZoom;
+  cam.x = wx - (e.clientX - W/2) / cam.zoom;
+  cam.y = wy - (e.clientY - H/2) / cam.zoom;
+
+  draw();
+}, {passive: false});
+
+// Touch support
+let lastTouchDist = 0;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) {
+    isDragging = true;
+    dragStart = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+    camStart = {x: cam.x, y: cam.y};
+  } else if (e.touches.length === 2) {
+    lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  }
+}, {passive: true});
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && isDragging) {
+    cam.x = camStart.x - (e.touches[0].clientX - dragStart.x) / cam.zoom;
+    cam.y = camStart.y - (e.touches[0].clientY - dragStart.y) / cam.zoom;
+    draw();
+  } else if (e.touches.length === 2) {
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    const factor = dist / lastTouchDist;
+    cam.zoom = Math.max(0.15, Math.min(2.5, cam.zoom * factor));
+    lastTouchDist = dist;
+    draw();
+  }
+}, {passive: false});
+
+canvas.addEventListener('touchend', () => { isDragging = false; });
+
+// ============================================================
+// TOOLTIP
+// ============================================================
+const tooltip = document.getElementById('tooltip');
+function showTooltip(node, mx, my) {
+  document.getElementById('ttName').textContent = node.name.replace('\n', ' ');
+  document.getElementById('ttType').textContent = (node.type || '') + (node.layer ? ' · ' + LAYERS.find(l=>l.id===node.layer)?.name : '');
+
+  let meta = '';
+  const acgProfile = getACGProfile(node);
+  if (acgProfile) meta += `<span class="tooltip-tag">${acgProfile.relevance === 'core' ? 'ACG Core' : 'ACG Adjacent'}</span>`;
+  if (node.status === 'P') meta += '<span class="tooltip-tag pub">Public</span>';
+  if (node.status === 'NP') meta += '<span class="tooltip-tag priv">Non-Public</span>';
+  if (node.revenue) meta += `<span class="tooltip-tag">R: ${node.revenue}</span>`;
+  if (node.mc) meta += `<span class="tooltip-tag">MC: ${node.mc}</span>`;
+  if (node.funding) meta += `<span class="tooltip-tag">${node.funding}</span>`;
+  document.getElementById('ttMeta').innerHTML = meta;
+
+  tooltip.classList.add('visible');
+  moveTooltip(mx, my);
+}
+function moveTooltip(mx, my) {
+  let x = mx + 16, y = my + 16;
+  if (x + 260 > W) x = mx - 270;
+  if (y + 80 > H) y = my - 80;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+
+// ============================================================
+// DETAIL PANEL
+// ============================================================
+function openDetail(node) {
+  const layer = LAYERS.find(l => l.id === node.layer);
+  const acgProfile = getACGProfile(node);
+  const fallback = createFallbackSVG(node.name.replace('\n',' '), layer.color);
+  const logoSrc = node.logo || (node.domain ? `https://www.google.com/s2/favicons?domain=${node.domain}&sz=128` : null);
+
+  let html = '';
+  html += logoSrc
+    ? `<img class="detail-logo" src="${logoSrc}" onerror="this.src='${fallback}'">`
+    : `<img class="detail-logo" src="${fallback}">`;
+
+  html += `<div class="detail-name">${node.name.replace('\n',' ')}</div>`;
+  html += `<div class="detail-layer" style="color:${layer.color}">${layer.name}</div>`;
+
+  if (node.desc) {
+    html += `<div class="detail-section"><div class="detail-section-title">About</div><div class="detail-desc">${node.desc}</div></div>`;
+  }
+
+  if (acgProfile) {
+    html += `<div class="detail-section"><div class="detail-section-title">ACG Relevance</div><div class="detail-desc">${acgProfile.relevance === 'core' ? 'Core' : 'Adjacent'} · ${acgProfile.focus}</div></div>`;
+    if (acgProfile.opps?.length) {
+      html += '<div class="detail-section"><div class="detail-section-title">Startup Opportunities</div><div class="detail-tags">';
+      acgProfile.opps.forEach(op => html += `<span class="detail-tag">${op}</span>`);
+      html += '</div></div>';
+    }
+  }
+
+  const meta = [];
+  if (node.status) meta.push({l:'Status',v:node.status==='P'?'Public':'Non-Public'});
+  if (node.revenue) meta.push({l:'Revenue',v:node.revenue});
+  if (node.mc) meta.push({l:'Market Cap',v:node.mc});
+  if (node.funding) meta.push({l:'Funding',v:node.funding});
+  if (meta.length) {
+    html += '<div class="detail-section"><div class="detail-section-title">Financials</div><div class="detail-meta-grid">';
+    meta.forEach(m => html += `<div class="detail-meta-item"><div class="detail-meta-label">${m.l}</div><div class="detail-meta-value">${m.v}</div></div>`);
+    html += '</div></div>';
+  }
+
+  if (node.ips?.length) {
+    html += '<div class="detail-section"><div class="detail-section-title">Notable IPs</div><div class="detail-tags">';
+    node.ips.forEach(ip => html += `<span class="detail-tag">${ip}</span>`);
+    html += '</div></div>';
+  }
+
+  // Connected companies
+  const conns = CONNECTIONS.filter(c => c.from === node.id || c.to === node.id);
+  if (conns.length) {
+    html += '<div class="detail-section"><div class="detail-section-title">Connections</div><div class="detail-connections">';
+    conns.forEach(c => {
+      const meta = getConnMeta(c);
+      const otherId = c.from === node.id ? c.to : c.from;
+      const other = NODES.find(n => n.id === otherId);
+      if (other) {
+        const tag = meta.kind === 'fact'
+          ? (meta.confidence === 'high' ? 'FACT-H' : 'FACT-M')
+          : (meta.kind === 'potential' ? 'POTENTIAL' : 'HYP');
+        html += `<div class="detail-conn" onclick="navigateTo('${otherId}')">
+          <span style="color:var(--muted)">→</span>
+          <span>${other.name.replace('\n',' ')}</span>
+          <span style="color:var(--muted);font-size:10px;margin-left:auto">${tag} · ${c.label || c.type}</span>
+        </div>`;
+      }
+    });
+    html += '</div></div>';
+  }
+
+  // Group
+  const group = GROUPS.find(g => g.members.includes(node.id));
+  if (group) {
+    html += `<div class="detail-section"><div class="detail-section-title">${group.name}</div><div class="detail-connections">`;
+    group.members.filter(id => id !== node.id).forEach(id => {
+      const other = NODES.find(n => n.id === id);
+      if (other) html += `<div class="detail-conn" onclick="navigateTo('${id}')"><span style="color:var(--muted)">→</span><span>${other.name.replace('\n',' ')}</span></div>`;
+    });
+    html += '</div></div>';
+  }
+
+  if (node.domain) {
+    html += `<a href="https://${node.domain}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#60A5FA;text-decoration:none;margin-top:8px">Visit Website →</a>`;
+  }
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailOverlay').classList.add('open');
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('open');
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+function navigateTo(nodeId) {
+  const node = NODES.find(n => n.id === nodeId);
+  if (!node) return;
+  closeDetail();
+  // Animate camera to node
+  const startX = cam.x, startY = cam.y, startZoom = cam.zoom;
+  const targetZoom = Math.max(0.6, cam.zoom);
+  const startTime = performance.now();
+  const duration = 600;
+
+  function animate(t) {
+    const p = Math.min(1, (t - startTime) / duration);
+    const ease = 1 - Math.pow(1 - p, 3);
+    cam.x = startX + (node.x - startX) * ease;
+    cam.y = startY + (node.y - startY) * ease;
+    cam.zoom = startZoom + (targetZoom - startZoom) * ease;
+    draw();
+    if (p < 1) requestAnimationFrame(animate);
+    else {
+      hoveredNode = node;
+      draw();
+      setTimeout(() => openDetail(node), 200);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+// ============================================================
+// CONTROLS
+// ============================================================
+function toggleAI() {
+  aiMode = !aiMode;
+  if (investableMode) investableMode = false;
+  syncToggleButtons();
+  draw();
+}
+
+function toggleACGFocus() {
+  acgOnlyMode = !acgOnlyMode;
+  if (investableMode) investableMode = false;
+  syncToggleButtons();
+  draw();
+}
+
+function toggleAllLines() {
+  showAllConnections = !showAllConnections;
+  if (investableMode) investableMode = false;
+  syncToggleButtons();
+  draw();
+}
+
+function toggleHighConfidence() {
+  highConfidenceOnly = !highConfidenceOnly;
+  if (investableMode) investableMode = false;
+  syncToggleButtons();
+  draw();
+}
+
+function toggleHypotheses() {
+  showHypotheses = !showHypotheses;
+  if (investableMode) investableMode = false;
+  syncToggleButtons();
+  draw();
+}
+
+function toggleInvestableView() {
+  investableMode = !investableMode;
+  if (investableMode) {
+    previousViewState = {
+      aiMode,
+      acgOnlyMode,
+      showAllConnections,
+      highConfidenceOnly,
+      showHypotheses
+    };
+    aiMode = true;
+    acgOnlyMode = true;
+    showAllConnections = false;
+    highConfidenceOnly = true;
+    showHypotheses = false;
+  } else if (previousViewState) {
+    aiMode = previousViewState.aiMode;
+    acgOnlyMode = previousViewState.acgOnlyMode;
+    showAllConnections = previousViewState.showAllConnections;
+    highConfidenceOnly = previousViewState.highConfidenceOnly;
+    showHypotheses = previousViewState.showHypotheses;
+    previousViewState = null;
+  }
+  syncToggleButtons();
+  draw();
+}
+
+function resetView() {
+  cam = { ...DEFAULT_CAM };
+  draw();
+}
+
+function zoomIn() {
+  cam.zoom = Math.min(2.5, cam.zoom * 1.3);
+  draw();
+}
+
+function zoomOut() {
+  cam.zoom = Math.max(0.15, cam.zoom / 1.3);
+  draw();
+}
+
+// Search
+function matchesSearch(node) {
+  if (!searchQuery) return false;
+  const str = [node.name, node.desc, node.type, ...(node.ips || [])].join(' ').toLowerCase();
+  return str.includes(searchQuery);
+}
+
+document.getElementById('searchBox').addEventListener('input', function() {
+  searchQuery = this.value.toLowerCase().trim();
+  // If search matches exactly one node, pan to it
+  if (searchQuery) {
+    const matches = NODES.filter(n => matchesSearch(n));
+    if (matches.length === 1) {
+      cam.x = matches[0].x;
+      cam.y = matches[0].y;
+    }
+  }
+  draw();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDetail();
+});
+
+// ============================================================
+// LEGEND
+// ============================================================
+function buildLegend() {
+  const el = document.getElementById('legend');
+  el.classList.toggle('collapsed', legendCollapsed);
+  let html = `<div class="legend-top"><div class="legend-title" style="margin-bottom:0">Legend</div><button class="legend-toggle" onclick="toggleLegend()">${legendCollapsed ? 'Expand' : 'Collapse'}</button></div>`;
+  html += '<div class="legend-body">';
+  html += '<div class="legend-title">Value Chain Layers</div>';
+  LAYERS.forEach(l => {
+    html += `<div class="legend-row"><div class="legend-dot" style="background:${l.color}"></div>${l.name}</div>`;
+  });
+  html += '<div class="legend-title" style="margin-top:8px">Connection Types</div>';
+  const connTypes = [
+    {label:'Ownership / Subsidiary', color:'#3b82f6', dash:''},
+    {label:'IP License', color:'#FBBF24', dash:'6,3'},
+    {label:'Production / Committee', color:'#A78BFA', dash:'10,4'},
+    {label:'Distribution', color:'#60A5FA', dash:'4,4'},
+    {label:'Investment', color:'#34D399', dash:'2,3'},
+    {label:'Technology', color:'#0891b2', dash:'8,3,2,3'},
+  ];
+  connTypes.forEach(ct => {
+    html += `<div class="legend-row"><svg width="24" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="${ct.color}" stroke-width="2" ${ct.dash ? `stroke-dasharray="${ct.dash}"` : ''}/></svg><span>${ct.label}</span></div>`;
+  });
+  html += '<div class="legend-title" style="margin-top:8px">Evidence Layer</div>';
+  html += '<div class="legend-row"><span class="tooltip-tag">FACT-H</span><span>High-confidence factual links</span></div>';
+  html += '<div class="legend-row"><span class="tooltip-tag">FACT-M</span><span>Medium-confidence factual links</span></div>';
+  html += '<div class="legend-row"><span class="tooltip-tag">POTENTIAL</span><span>Likely application links (tech integration)</span></div>';
+  html += '<div class="legend-row"><span class="tooltip-tag">HYP</span><span>Hypothesis / directional signal</span></div>';
+  html += '<div class="legend-title" style="margin-top:8px">Node Size = Importance</div>';
+  html += '<div class="legend-row" style="font-size:11px;color:var(--muted)">P = Public · NP = Non-Public<br>R = Revenue · MC = Market Cap</div>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function toggleLegend() {
+  legendCollapsed = !legendCollapsed;
+  buildLegend();
+}
+
+// ============================================================
+// LOGO PRELOADER
+// ============================================================
+function preloadLogos() {
+  NODES.forEach(node => {
+    if (node.logo) {
+      const customImg = new Image();
+      customImg.src = node.logo;
+      customImg.onload = () => { loadedLogos[node.id] = customImg; draw(); };
+      customImg.onerror = () => {};
+      return;
+    }
+    if (!node.domain) return;
+    const img = new Image();
+    // Don't set crossOrigin — favicons don't support CORS but we can still draw them
+    img.src = `https://www.google.com/s2/favicons?domain=${node.domain}&sz=128`;
+    img.onload = () => { loadedLogos[node.id] = img; draw(); };
+    img.onerror = () => {
+      // Try logo.clearbit as fallback
+      const img2 = new Image();
+      img2.src = `https://logo.clearbit.com/${node.domain}`;
+      img2.onload = () => { loadedLogos[node.id] = img2; draw(); };
+      img2.onerror = () => {};
+    };
+  });
+}
+
+function createFallbackSVG(name, color) {
+  const letter = name.charAt(0).toUpperCase();
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" rx="12" fill="${color}"/><text x="32" y="42" text-anchor="middle" fill="white" font-size="28" font-family="sans-serif" font-weight="bold">${letter}</text></svg>`)}`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+applyLayerScatter();
+buildNodeDegreeMap();
+updateDefaultCameraFromNodes();
+cam = { ...DEFAULT_CAM };
+buildLegend();
+syncToggleButtons();
+resize();
+preloadLogos();
+</script>
+</body>
+</html>
