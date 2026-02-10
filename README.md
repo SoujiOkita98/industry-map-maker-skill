@@ -69,7 +69,8 @@ One-line install into current workspace:
 mkdir -p skills/industry-map-maker-skill && curl -L https://raw.githubusercontent.com/SoujiOkita98/industry-map-maker-skill/main/SKILL.md -o skills/industry-map-maker-skill/SKILL.md
 ```
 
-Then start a new OpenClaw session in that workspace and invoke the skill.
+By default, newly installed skills are guaranteed in the next OpenClaw session.
+If Skill Watcher is enabled, changes can hot-reload and become available on the next turn in the current session.
 
 Reference: [OpenClaw Skills Docs](https://docs.openclaw.ai/tools/skills)
 

@@ -69,7 +69,8 @@ OpenClaw 会从以下目录加载技能：
 mkdir -p skills/industry-map-maker-skill && curl -L https://raw.githubusercontent.com/SoujiOkita98/industry-map-maker-skill/main/SKILL.md -o skills/industry-map-maker-skill/SKILL.md
 ```
 
-然后在该 workspace 里启动新的 OpenClaw 会话并调用这个 skill。
+默认情况下，新安装的 skill 会在下一个 OpenClaw 会话中稳定生效。
+如果开启 Skill Watcher，当前会话可热更新，并在下一轮 turn 可用。
 
 参考文档：[OpenClaw Skills Docs](https://docs.openclaw.ai/tools/skills)
 
