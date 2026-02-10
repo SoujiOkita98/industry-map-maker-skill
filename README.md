@@ -2,6 +2,12 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+<p align="center">
+  <a href="https://soujiokita98.github.io/industry-map-maker-skill/">
+    <img src="assets/thumbnail.png" alt="Industry Map Maker Demo Thumbnail" width="960" />
+  </a>
+</p>
+
 ## Live Demo
 
 [Open Interactive Map](https://soujiokita98.github.io/industry-map-maker-skill/)
