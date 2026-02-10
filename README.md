@@ -2,6 +2,59 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+## Live Demo
+
+[Open Interactive Map](https://soujiokita98.github.io/industry-map-maker-skill/)
+
+## At a Glance
+
+This repository is a reusable skill for building interactive industry maps in a single `index.html`.
+
+Current showcase:
+- Anime/ACG ecosystem map
+- 88 nodes, 103 connections
+- evidence-tiered edges (`FACT-H`, `FACT-M`, `POTENTIAL`, `HYP`)
+- AI opportunity overlays by value-chain layer
+
+## Quick Start (60 Seconds)
+
+```bash
+git clone https://github.com/SoujiOkita98/industry-map-maker-skill.git
+cd industry-map-maker-skill
+python3 -m http.server 8000
+```
+
+Open:
+- [http://localhost:8000/index.html](http://localhost:8000/index.html)
+
+Validate:
+```bash
+bash scripts/validate_map.sh
+```
+
+## How To Use With Codex / Claude Code
+
+1. Set this repo as the working directory.
+2. Ask the agent to read `SKILL.md` first.
+3. Give a scoped task (data, logos, layout, validation).
+4. Require `bash scripts/validate_map.sh` before completion.
+
+Starter prompt:
+```text
+Read SKILL.md first. Add 3 strongly relevant AI startups to this map with FACT/POTENTIAL/HYP classification, USD-consistent market text, and high-quality logos. Run bash scripts/validate_map.sh before finishing.
+```
+
+## Workflow
+
+```mermaid
+flowchart LR
+    A["Research claims & logos"] --> B["Patch index.html data blocks"]
+    B --> C["Run validation script"]
+    C --> D["Manual visual QA in browser"]
+    D --> E["Commit + push"]
+    E --> F["GitHub Pages auto-preview"]
+```
+
 An interactive, single-file map framework that demonstrates:
 
 - a full industry value chain
@@ -19,23 +72,6 @@ This project provides a reusable pattern for any industry map:
 - a maintainer skill (`SKILL.md`) to guide future AI agents
 - evidence-tiered relationship modeling (`FACT-H`, `FACT-M`, `POTENTIAL`, `HYP`)
 - USD-normalized market annotation policy
-
-## Pairing With Codex / Claude Code
-
-This repo is designed to work best when your coding agent runs **inside this same directory**.
-
-Recommended workflow:
-
-1. Open the repo as the current working directory.
-2. Ask the agent to read `SKILL.md` first.
-3. Ask for a scoped change (data update, visual tweak, evidence cleanup).
-4. Require validation commands in `SKILL.md` before accepting changes.
-
-Example prompt:
-
-```text
-Read SKILL.md first. Then add 3 strongly relevant AI startups to this map with FACT/POTENTIAL classification, USD-consistent descriptions, and logo fixes. Run integrity checks before finishing.
-```
 
 ## Project Structure
 
@@ -60,22 +96,6 @@ Read SKILL.md first. Then add 3 strongly relevant AI startups to this map with F
 └── .gitignore
 ```
 
-## Run Locally
-
-```bash
-python3 -m http.server 8000
-```
-
-Open:
-
-- [http://localhost:8000/index.html](http://localhost:8000/index.html)
-
-Validation:
-
-```bash
-bash scripts/validate_map.sh
-```
-
 ## GitHub Pages Preview (Best Practice)
 
 This repo includes an Actions workflow for Pages deploy:
@@ -89,9 +109,8 @@ After pushing to GitHub:
 3. Push to `main` (or run workflow manually in Actions tab)
 4. Your live preview URL will appear in the workflow summary and Pages settings
 
-Expected URL pattern:
-
-- `https://<your-username>.github.io/<your-repo>/`
+This repo live URL:
+- [https://soujiokita98.github.io/industry-map-maker-skill/](https://soujiokita98.github.io/industry-map-maker-skill/)
 
 ## Replicate This For Another Industry
 
