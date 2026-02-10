@@ -52,13 +52,21 @@ Return: (a) what changed, (b) why, (c) confidence and sources for major claims.
 
 ## OpenClaw（可选）
 
-如果你用 OpenClaw，且支持导入 skill/repo，可直接使用这个仓库地址：
+OpenClaw 会从以下目录加载技能：
+- `<workspace>/skills`（优先级最高）
+- `~/.openclaw/skills`
+
+所以最简单方式是放一个包含 `SKILL.md` 的技能目录。
+
+一行安装到当前工作区：
 
 ```text
-https://github.com/SoujiOkita98/industry-map-maker-skill
+mkdir -p skills/industry-map-maker-skill && curl -L https://raw.githubusercontent.com/SoujiOkita98/industry-map-maker-skill/main/SKILL.md -o skills/industry-map-maker-skill/SKILL.md
 ```
 
-如果你的 OpenClaw 是基于本地目录工作，就把本仓库设为工作目录，并先让它读取 `SKILL.md`。
+然后在该 workspace 里启动新的 OpenClaw 会话并调用这个 skill。
+
+参考文档：[OpenClaw Skills Docs](https://docs.openclaw.ai/tools/skills)
 
 ## 目录（简版）
 

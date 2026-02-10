@@ -52,13 +52,21 @@ Return: (a) what changed, (b) why, (c) confidence and sources for major claims.
 
 ## OpenClaw (Optional)
 
-If you use OpenClaw and it supports importing skills/repositories, use this repo URL:
+OpenClaw loads skills from:
+- `<workspace>/skills` (highest precedence)
+- `~/.openclaw/skills`
+
+So the easiest way is to place this skill as a folder that contains `SKILL.md`.
+
+One-line install into current workspace:
 
 ```text
-https://github.com/SoujiOkita98/industry-map-maker-skill
+mkdir -p skills/industry-map-maker-skill && curl -L https://raw.githubusercontent.com/SoujiOkita98/industry-map-maker-skill/main/SKILL.md -o skills/industry-map-maker-skill/SKILL.md
 ```
 
-If your OpenClaw workflow is local-directory based, open this repo as the working directory and tell it to read `SKILL.md` first.
+Then start a new OpenClaw session in that workspace and invoke the skill.
+
+Reference: [OpenClaw Skills Docs](https://docs.openclaw.ai/tools/skills)
 
 ## Repo Layout (Simple)
 
