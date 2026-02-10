@@ -26,6 +26,11 @@ Read SKILL.md and then improve index.html with only high-signal changes (USD-onl
 - 核心规则：`SKILL.md`（agent 执行说明）
 - 当前示例：Anime/ACG（可替换为任何行业）
 
+## 免责声明（最佳效果）
+
+想要最好的效果，建议先完整 clone 这个仓库，并让 agent 在仓库根目录内工作。  
+最佳实践是先让 agent 学习本仓库上下文（`SKILL.md`、`index.html`、脚本和示例），再开始执行地图更新任务。
+
 ## 1 分钟启动
 
 ```bash

@@ -26,6 +26,11 @@ A public, reproducible example for building industry relationship maps with AI a
 - Core instruction set: `SKILL.md` (what agents should do)
 - Showcase domain: Anime/ACG (replaceable)
 
+## Disclaimer (Best Results)
+
+For best results, clone this entire repository and run your agent inside this repo root.  
+The strongest workflow is: let the agent learn this repository context first (`SKILL.md`, `index.html`, scripts, and examples), then execute map updates from there.
+
 ## 1-Minute Setup
 
 ```bash
