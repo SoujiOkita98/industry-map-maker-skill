@@ -12,6 +12,12 @@
 
 [https://soujiokita98.github.io/industry-map-maker-skill/](https://soujiokita98.github.io/industry-map-maker-skill/)
 
+## 给任意 Agent 的一行指令
+
+```text
+Read SKILL.md and then improve index.html with only high-signal changes (USD-only numbers, correct FACT-H/FACT-M/POTENTIAL/HYP edges, better logos), run bash scripts/validate_map.sh, and return changes + rationale + confidence.
+```
+
 ## 这个仓库是什么
 
 这是一个公开、可复用的行业关系图样板仓库，专门给 AI agent 学习和执行。
@@ -30,7 +36,7 @@ python3 -m http.server 8000
 
 打开：[http://localhost:8000/index.html](http://localhost:8000/index.html)
 
-## 与 Codex / Claude Code 一起用
+## 与任意 Agent 一起用
 
 把下面这段直接贴给 agent：
 
@@ -43,6 +49,16 @@ Requirements:
 4) Validate before finishing with: bash scripts/validate_map.sh.
 Return: (a) what changed, (b) why, (c) confidence and sources for major claims.
 ```
+
+## OpenClaw（可选）
+
+如果你用 OpenClaw，且支持导入 skill/repo，可直接使用这个仓库地址：
+
+```text
+https://github.com/SoujiOkita98/industry-map-maker-skill
+```
+
+如果你的 OpenClaw 是基于本地目录工作，就把本仓库设为工作目录，并先让它读取 `SKILL.md`。
 
 ## 目录（简版）
 

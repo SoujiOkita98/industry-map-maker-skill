@@ -12,6 +12,12 @@
 
 [https://soujiokita98.github.io/industry-map-maker-skill/](https://soujiokita98.github.io/industry-map-maker-skill/)
 
+## One-Line For Any Agent
+
+```text
+Read SKILL.md and then improve index.html with only high-signal changes (USD-only numbers, correct FACT-H/FACT-M/POTENTIAL/HYP edges, better logos), run bash scripts/validate_map.sh, and return changes + rationale + confidence.
+```
+
 ## What This Repo Is
 
 A public, reproducible example for building industry relationship maps with AI agents.
@@ -30,7 +36,7 @@ python3 -m http.server 8000
 
 Open: [http://localhost:8000/index.html](http://localhost:8000/index.html)
 
-## Use It With Codex / Claude Code
+## Use It With Any Agent
 
 Paste this to your agent:
 
@@ -43,6 +49,16 @@ Requirements:
 4) Validate before finishing with: bash scripts/validate_map.sh.
 Return: (a) what changed, (b) why, (c) confidence and sources for major claims.
 ```
+
+## OpenClaw (Optional)
+
+If you use OpenClaw and it supports importing skills/repositories, use this repo URL:
+
+```text
+https://github.com/SoujiOkita98/industry-map-maker-skill
+```
+
+If your OpenClaw workflow is local-directory based, open this repo as the working directory and tell it to read `SKILL.md` first.
 
 ## Repo Layout (Simple)
 
