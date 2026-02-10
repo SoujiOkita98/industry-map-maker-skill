@@ -31,6 +31,36 @@ Deliver high-signal map updates that are:
 3. Validate with `bash scripts/validate_map.sh`.
 4. Report what changed + why + confidence level.
 
+## Build a New Map Page (from scratch)
+
+When asked to create a similar presentation page for a new industry, follow this exact structure:
+
+1. Start from this repository `index.html` as the base (do not introduce frameworks).
+2. Replace only data blocks first:
+   - `LAYERS` (value chain blocks + market text in USD)
+   - `NODES` (companies/startups with `domain`/`logo`/metrics)
+   - `CONNECTIONS` (typed links + clear labels)
+3. Keep core interaction model:
+   - pan/zoom canvas
+   - searchable nodes
+   - edge visibility toggles
+   - detail side panel
+   - legend (collapsible)
+4. Keep visual readability constraints:
+   - high contrast labels
+   - non-overlapping major clusters (scatter if needed)
+   - line opacity visible by default
+   - important nodes visually larger
+5. Only after data quality is stable, tune layout and style.
+6. Run `bash scripts/validate_map.sh` and manually QA in browser.
+
+Definition of done for a new page:
+- loads as a single static HTML
+- relationships are evidence-tiered
+- logos are mostly official/high quality
+- market/financial text is USD-only
+- map is readable at default zoom on desktop
+
 ## Data Rules
 
 ### Nodes
