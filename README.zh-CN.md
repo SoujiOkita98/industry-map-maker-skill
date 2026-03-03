@@ -8,6 +8,14 @@
   </a>
 </p>
 
+## 快速开始 — 只需要 Skill 文件？
+
+> **不需要 clone 整个仓库。** 直接下载 `.skill` 文件，拖入 Claude 即可使用：
+>
+> [**industry-map-maker.skill**](./industry-map-maker.skill) — 适用于任何行业，完全自包含。
+
+---
+
 ## 在线预览
 
 [https://soujiokita98.github.io/industry-map-maker-skill/](https://soujiokita98.github.io/industry-map-maker-skill/)
@@ -25,6 +33,25 @@ Read SKILL.md and then improve index.html with only high-signal changes (USD-onl
 - 核心产物：`index.html`（单文件交互地图）
 - 核心规则：`SKILL.md`（agent 执行说明）
 - 当前示例：Anime/ACG（可替换为任何行业）
+
+## 安装为 Claude Skill
+
+下载通用版 skill（适用于任何行业，不仅限于动漫）：
+
+[**📦 industry-map-maker.skill**](./industry-map-maker.skill)
+
+这个 `.skill` 文件打包了完整的通用行业地图制作流程：证据分层边、USD 统一口径、单文件 HTML 输出、验证脚本和研究参考文档。拖入 Claude skills 即可使用。
+
+仓库中的 `SKILL.md` 是针对 Anime/ACG 示例的。`.skill` 文件是通用版本，适用于任何行业 —— AI 硬件、企业 SaaS、软饮料，任何你需要做行业图谱的方向。
+
+**`.skill` 文件包含：**
+- `SKILL.md` — 主指令集（创建新地图 + 迭代改进已有地图）
+- `references/data-schema.md` — 节点、边、层数据格式
+- `references/evidence-policy.md` — FACT-H / FACT-M / POTENTIAL / HYP 分类标准
+- `references/html-template-guide.md` — 单文件 HTML 引擎工作原理
+- `scripts/validate_map.sh` — 完整性 + 币种 + 敏感信息检查
+- `scripts/logo_probe.sh` — Logo URL 探测工具
+- `templates/evidence_log_template.csv` — 证据记录模板
 
 ## 免责声明（最佳效果）
 
@@ -79,6 +106,7 @@ mkdir -p skills/industry-map-maker-skill && curl -L https://raw.githubuserconten
 ```text
 index.html                         # 交互地图
 SKILL.md                           # agent 执行手册（先读）
+industry-map-maker.skill           # 通用版 skill（适用任何行业）
 scripts/validate_map.sh            # 完整性 + 敏感信息检查
 scripts/logo_probe.sh              # logo 链接探测
 docs/AGENT_PROMPT_TEMPLATES.md     # 更多提示词

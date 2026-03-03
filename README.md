@@ -8,6 +8,14 @@
   </a>
 </p>
 
+## Quick Start — Just Want the Skill?
+
+> **You don't need to clone this repo.** Download the single `.skill` file and drop it into Claude:
+>
+> [**industry-map-maker.skill**](./industry-map-maker.skill) — works for any industry, fully self-contained.
+
+---
+
 ## Live Demo
 
 [https://soujiokita98.github.io/industry-map-maker-skill/](https://soujiokita98.github.io/industry-map-maker-skill/)
@@ -25,6 +33,25 @@ A public, reproducible example for building industry relationship maps with AI a
 - Core artifact: `index.html` (single-file interactive map)
 - Core instruction set: `SKILL.md` (what agents should do)
 - Showcase domain: Anime/ACG (replaceable)
+
+## Install as a Claude Skill
+
+Download the generalized skill (works for any industry, not just anime):
+
+[**📦 industry-map-maker.skill**](./industry-map-maker.skill)
+
+This `.skill` file packages the full generalized map-making workflow: evidence-tiered edges, USD-normalized market data, single-file HTML output, validation scripts, and research references. Drag it into your Claude skills to use it.
+
+The repo's `SKILL.md` is anime/ACG-specific for the demo. The `.skill` file is the general-purpose version that works for any industry — AI hardware, enterprise SaaS, soft drinks, whatever you need to map.
+
+**What's inside the `.skill` file:**
+- `SKILL.md` — Main instruction set (create new maps + improve existing ones)
+- `references/data-schema.md` — Node, edge, layer data format
+- `references/evidence-policy.md` — FACT-H / FACT-M / POTENTIAL / HYP classification
+- `references/html-template-guide.md` — How the single-file HTML engine works
+- `scripts/validate_map.sh` — Integrity + currency + sensitive-string checks
+- `scripts/logo_probe.sh` — Logo URL probe helper
+- `templates/evidence_log_template.csv` — Evidence logging format
 
 ## Disclaimer (Best Results)
 
@@ -79,6 +106,7 @@ Reference: [OpenClaw Skills Docs](https://docs.openclaw.ai/tools/skills)
 ```text
 index.html                         # interactive map
 SKILL.md                           # agent playbook (read first)
+industry-map-maker.skill           # generalized skill (any industry)
 scripts/validate_map.sh            # integrity + sensitivity checks
 scripts/logo_probe.sh              # logo URL probe helper
 docs/AGENT_PROMPT_TEMPLATES.md     # extra prompts
